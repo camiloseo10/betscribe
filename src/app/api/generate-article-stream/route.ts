@@ -4,6 +4,7 @@ import { buildArticlePrompt, extractMetadata, countWords } from "@/lib/prompt-bu
 import { db } from "@/db";
 import { aiConfigurations, articles } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { isFreeLimitReached, freeLimitMessage } from "@/lib/limits";
 
 interface GenerateArticleStreamRequest {
   configId: number;
@@ -14,6 +15,14 @@ interface GenerateArticleStreamRequest {
 }
 
 // Helper to format API error messages
+function sanitizeMessage(message?: string): string {
+  if (!message) return "Error inesperado";
+  return message
+    .replace(/([a-z]+:\/\/[^\s]+)|libsql:\/\/[^\s]+/gi, "[enlace oculto]")
+    .replace(/[\w.-]+\.turso\.io/gi, "[host oculto]")
+    .replace(/orchids/gi, "[cluster]");
+}
+
 function formatApiError(error: any): string {
   if (error.status === 429 || error.code === 429) {
     return "Has excedido el límite de solicitudes de la API de Gemini. Por favor espera unos minutos e intenta de nuevo. Considera actualizar tu plan en https://ai.google.dev/pricing";
@@ -27,7 +36,7 @@ function formatApiError(error: any): string {
   if (error.status === 503 || error.code === 503) {
     return "El modelo de IA está sobrecargado. Reintentando automáticamente...";
   }
-  return error.message || "Error desconocido al generar el artículo";
+  return sanitizeMessage(error.message) || "Error desconocido al generar el artículo";
 }
 
 // Helper to wait/sleep
@@ -39,6 +48,11 @@ async function generateWithRetry(prompt: string, maxRetries = 3) {
   
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
+      if (!geminiClient) {
+        const err = { status: 401, message: "GOOGLE_GEMINI_API_KEY no está configurada" };
+        throw err as any;
+      }
+
       const response = await geminiClient.models.generateContentStream({
         model: MODEL_ID,
         contents: [
@@ -104,6 +118,11 @@ export async function POST(req: NextRequest) {
         JSON.stringify({ error: "Configuración no encontrada" }),
         { status: 404, headers: { "Content-Type": "application/json" } }
       );
+    }
+
+    // Free plan limit check
+    if (await isFreeLimitReached("articles", configId)) {
+      return new Response(JSON.stringify({ error: freeLimitMessage("articles"), code: "FREE_LIMIT_REACHED" }), { status: 402, headers: { "Content-Type": "application/json" } });
     }
 
     // Create article record with "generating" status

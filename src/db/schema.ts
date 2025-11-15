@@ -42,6 +42,7 @@ export const contentIdeas = sqliteTable('content_ideas', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   configId: integer('config_id').references(() => aiConfigurations.id),
   topic: text('topic').notNull(),
+  websiteUrl: text('website_url'),
   language: text('language').notNull().default('es'),
   ideas: text('ideas').notNull(),
   status: text('status').notNull().default('generating'),
@@ -54,11 +55,28 @@ export const seoStructures = sqliteTable('seo_structures', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   configId: integer('config_id').references(() => aiConfigurations.id),
   keyword: text('keyword').notNull(),
+  websiteUrl: text('website_url').default(''),
   language: text('language').notNull().default('es'),
   structure: text('structure').notNull(),
-  htmlContent: text('html_content').notNull(),
-  status: text('status').notNull().default('generating'),
+  htmlContent: text('html_content').notNull().default(''),
+  status: text('status', { enum: ['generating', 'completed', 'error'] }).notNull().default('generating'),
   errorMessage: text('error_message'),
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
+});
+export const users = sqliteTable('users', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  email: text('email').notNull(),
+  name: text('name').notNull(),
+  passwordHash: text('password_hash').notNull(),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});
+
+export const sessions = sqliteTable('sessions', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: integer('user_id').references(() => users.id),
+  token: text('token').notNull(),
+  createdAt: text('created_at').notNull(),
+  expiresAt: text('expires_at').notNull(),
 });

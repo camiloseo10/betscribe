@@ -1,12 +1,25 @@
 import { NextRequest } from "next/server";
 import { geminiClient, MODEL_ID } from "@/lib/gemini";
 import { db } from "@/db";
+import { createClient } from "@libsql/client";
 import { seoStructures, aiConfigurations } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { fetchWebsiteContent } from "@/lib/website-analyzer";
 
 interface ApiError {
   status?: number;
   message: string;
+}
+
+function sanitizeMessage(message?: string): string {
+  if (!message) return "Error inesperado";
+  return message
+    // ocultar urls
+    .replace(/([a-z]+:\/\/[^\s]+)|libsql:\/\/[^\s]+/gi, "[enlace oculto]")
+    // ocultar dominios turso
+    .replace(/[\w.-]+\.turso\.io/gi, "[host oculto]")
+    // ocultar nombre de cluster previo
+    .replace(/orchids/gi, "[cluster]");
 }
 
 function formatApiError(error: ApiError): string {
@@ -22,7 +35,7 @@ function formatApiError(error: ApiError): string {
   if (error.status === 503) {
     return "El servicio de IA está temporalmente no disponible. Intentando de nuevo...";
   }
-  return error.message || "Error al generar la estructura SEO. Por favor, intenta de nuevo.";
+  return sanitizeMessage(error.message) || "Error al generar la estructura SEO. Por favor, intenta de nuevo.";
 }
 
 async function generateWithRetry(
@@ -33,6 +46,10 @@ async function generateWithRetry(
   
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
+      if (!geminiClient) {
+        throw { status: 401, message: "GOOGLE_GEMINI_API_KEY no está configurada" };
+      }
+
       const result = await geminiClient.models.generateContentStream({
         model: MODEL_ID,
         contents: [{ role: "user", parts: [{ text: prompt }] }],
@@ -63,7 +80,15 @@ export async function POST(request: NextRequest) {
   
   try {
     const body = await request.json();
-    const { configId, keyword, language = 'es' } = body;
+    const { configId, keyword, websiteUrl, language = 'es' } = body;
+
+    const { isFreeLimitReached, freeLimitMessage } = await import("@/lib/limits");
+    if (await isFreeLimitReached("structures", parseInt(String(configId)))) {
+      return new Response(
+        encoder.encode(`data: ${JSON.stringify({ type: "error", error: freeLimitMessage("structures"), code: "FREE_LIMIT_REACHED" })}\n\n`),
+        { status: 402, headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive' } }
+      );
+    }
 
     if (!configId || isNaN(parseInt(String(configId)))) {
       return new Response(
@@ -125,94 +150,146 @@ export async function POST(request: NextRequest) {
     }
 
     const now = new Date().toISOString();
-    const newStructure = await db.insert(seoStructures)
-      .values({
-        configId: parseInt(String(configId)),
-        keyword: keyword.trim(),
-        language: language || 'es',
-        structure: '{}',
-        htmlContent: '',
-        status: 'generating',
-        createdAt: now,
-        updatedAt: now,
-      })
-      .returning();
+    const rawClient = createClient({
+      url: process.env.TURSO_CONNECTION_URL!,
+      authToken: process.env.TURSO_AUTH_TOKEN!,
+    });
 
-    const seoStructureId = newStructure[0].id;
+    const insertSql = `
+      INSERT INTO seo_structures (
+        config_id, keyword, language, structure, html_content, status, error_message, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+    `;
+
+    const insertArgs = [
+      parseInt(String(configId), 10),
+      keyword.trim(),
+      language || 'es',
+      '{}',
+      '',
+      'generating',
+      '',
+      now,
+      now,
+    ];
+
+    const insertRes = await rawClient.execute({ sql: insertSql, args: insertArgs });
+    const seoStructureId = (insertRes.rows?.[0] as any)?.id;
 
     const stream = new ReadableStream({
       async start(controller) {
         try {
+          // Analyze website if URL provided
+          let websiteAnalysis = null;
+          if (websiteUrl && websiteUrl.trim() !== '') {
+            try {
+              controller.enqueue(
+                encoder.encode(`data: ${JSON.stringify({ 
+                  type: "info", 
+                  message: "Analizando sitio web para estructura SEO..." 
+                })}
+
+`)
+              );
+              
+              websiteAnalysis = await fetchWebsiteContent(websiteUrl);
+            } catch (error) {
+              console.error('Website analysis error for SEO structure:', error);
+              // Continue without website analysis if it fails
+            }
+          }
+
           controller.enqueue(
             encoder.encode(`data: ${JSON.stringify({ 
               type: "seo_structure_id", 
               seoStructureId 
-            })}\n\n`)
+            })}
+
+`)
           );
 
           const languageName = language === 'es' ? 'español' : 
                                language === 'en' ? 'inglés' : 
                                language === 'pt' ? 'portugués' : 'español';
 
-          const prompt = `Actúa como un experto en SEO y marketing de contenidos. Tu tarea es crear una estructura de encabezados H2 y H3 optimizada para SEO para la siguiente palabra clave:
+          let prompt = `Actúa como un experto en SEO y marketing de contenidos. Tu tarea es crear una estructura de encabezados H2 y H3 optimizada para SEO para la siguiente palabra clave:
 
 Palabra clave: "${keyword}"
-Idioma: ${languageName}
+Idioma: ${languageName}`;
 
-PROCESO DE INVESTIGACIÓN:
+          if (websiteAnalysis) {
+            prompt += `\n\nINFORMACIÓN DEL SITIO WEB ANALIZADO:\n`;
+            prompt += `URL: ${websiteAnalysis.url}\n`;
+            prompt += `Título: ${websiteAnalysis.title}\n`;
+            prompt += `Descripción: ${websiteAnalysis.description}\n`;
+            prompt += `Encabezados encontrados: ${websiteAnalysis.headings.join(', ')}\n`;
+            prompt += `Palabras clave principales: ${websiteAnalysis.keywords.slice(0, 10).join(', ')}\n`;
+            prompt += `\nBASEÁNDOTE EN ESTA INFORMACIÓN, crea una estructura SEO que COMPLEMENTE y NO DUPLIQUE el contenido existente.`;
+          }
+
+          prompt += `\n\nPROCESO DE INVESTIGACIÓN:
 1. Analiza la intención de búsqueda detrás de esta palabra clave
-2. Identifica las preguntas que los usuarios hacen sobre este tema
-3. Investiga mentalmente las estructuras de contenido que funcionan para este tema
-4. Considera el viaje del usuario y su búsqueda de información
+2. Identifica las preguntas que los usuarios hacen sobre este tema`;
 
-REQUISITOS DE LA ESTRUCTURA:
-- Crea entre 6-10 encabezados H2 principales
-- Cada H2 debe tener 2-4 encabezados H3 relacionados
-- Los encabezados deben seguir un flujo lógico y progresivo
-- Incluye variaciones naturales de la palabra clave
-- Usa preguntas cuando sea apropiado (Qué, Cómo, Por qué, Cuándo)
-- Mantén los encabezados concisos y descriptivos
+          if (websiteAnalysis) {
+            prompt += `\n3. IDENTIFICA LAGUNAS DE CONTENIDO: aspectos que tu sitio web NO cubre pero que son relevantes para esta palabra clave`;
+            prompt += `\n4. Crea una estructura que APORTE NUEVO VALOR y no repita lo que ya existe`;
+          } else {
+            prompt += `\n3. Investiga mentalmente las estructuras de contenido que funcionan para este tema`;
+            prompt += `\n4. Considera el viaje del usuario y su búsqueda de información`;
+          }
 
-FORMATO DE RESPUESTA REQUERIDO:
-Debes proporcionar DOS versiones de la estructura:
-
-1. ESTRUCTURA JSON (al inicio):
-Un objeto JSON con la jerarquía de encabezados en este formato:
-{
-  "keyword": "${keyword}",
-  "language": "${languageName}",
-  "headings": [
-    {
-      "h2": "Título del H2",
-      "h3": [
-        "Título del H3 1",
-        "Título del H3 2",
-        "Título del H3 3"
-      ]
-    }
-  ]
-}
-
-2. CONTENIDO HTML (después de "---HTML---"):
-HTML limpio con las etiquetas H2 y H3 correctamente anidadas y formateadas.
-
-IMPORTANTE: Separa las dos secciones con exactamente "---HTML---" en una línea aparte.
-
-Genera la estructura completa ahora:`;
+          prompt += `\n5. REQUISITOS DE LA ESTRUCTURA:
+ - Crea entre 6-10 encabezados H2 principales
+ - Cada H2 debe tener entre 3-6 H3 relevantes
+ - Capitalización: usa estilo de oración en TODOS los H2/H3 (solo mayúscula inicial y nombres propios). NO uses Title Case ni capitalices cada palabra.
+ \nFORMATO DE SALIDA:
+          Primero devuelve exclusivamente un JSON válido con esta estructura exacta (sin texto extra):
+          {
+            "headings": [
+              { "h2": "...", "h3": ["...", "..."] },
+              { "h2": "...", "h3": ["...", "..."] }
+            ]
+          }
+          \nTras el JSON, escribe en la siguiente línea el separador ---HTML--- y a continuación el HTML con los mismos H2 y H3:`;
 
           const result = await generateWithRetry(prompt);
           let fullContent = '';
+          const textIterable = typeof (result as any).streamText === 'function'
+            ? (result as any).streamText()
+            : ((result as any).stream || result);
 
-          for await (const chunk of result.stream) {
-            const text = chunk.text();
-            fullContent += text;
+          for await (const chunk of textIterable) {
+            let text = '';
             
-            controller.enqueue(
-              encoder.encode(`data: ${JSON.stringify({ 
-                type: "content", 
-                text 
-              })}\n\n`)
-            );
+            try {
+              if (typeof chunk === 'string') {
+                text = chunk;
+              } else if (chunk.candidates && chunk.candidates[0] && chunk.candidates[0].content && chunk.candidates[0].content.parts && chunk.candidates[0].content.parts[0]) {
+                text = chunk.candidates[0].content.parts[0].text || '';
+              } else if (chunk.content && chunk.content.parts && chunk.content.parts[0]) {
+                text = chunk.content.parts[0].text || '';
+              } else if ((chunk as any)?.text) {
+                const t = (chunk as any).text;
+                text = typeof t === 'function' ? t() : String(t);
+              } else {
+                text = String(chunk);
+              }
+            } catch (e) {
+              console.error('Error extracting text from chunk:', e, chunk);
+              text = '';
+            }
+            
+            if (text && text.trim()) {
+              fullContent += text;
+              
+              controller.enqueue(
+                encoder.encode(`data: ${JSON.stringify({ 
+                  type: "content", 
+                  text 
+                })}\n\n`)
+              );
+            }
           }
 
           let structureJson = {};
@@ -232,16 +309,36 @@ Genera la estructura completa ahora:`;
                 structureJson = { error: "No se pudo extraer el JSON", raw: jsonPart };
               }
             } else {
-              const h2Matches = fullContent.match(/<h2[^>]*>.*?<\/h2>/gi) || [];
-              const h3Matches = fullContent.match(/<h3[^>]*>.*?<\/h3>/gi) || [];
-              
-              if (h2Matches.length > 0 || h3Matches.length > 0) {
+              const tagMatches = fullContent.match(/<(h[23])[^>]*>([\s\S]*?)<\/h[23]>/gi) || [];
+              if (tagMatches.length > 0) {
                 htmlContent = fullContent;
+                const ordered: Array<{ level: string; text: string }> = [];
+                for (const m of tagMatches) {
+                  const mm = m.match(/<(h[23])[^>]*>([\s\S]*?)<\/h[23]>/i);
+                  if (mm) {
+                    const level = mm[1].toLowerCase();
+                    const text = mm[2].replace(/<[^>]+>/g, '').trim();
+                    if (text) ordered.push({ level, text });
+                  }
+                }
+                const headings: Array<{ h2: string; h3: string[] }> = [];
+                let current: { h2: string; h3: string[] } | null = null;
+                for (const item of ordered) {
+                  if (item.level === 'h2') {
+                    if (current) headings.push(current);
+                    current = { h2: item.text, h3: [] };
+                  } else if (item.level === 'h3') {
+                    if (!current) {
+                      current = { h2: 'Sección', h3: [] };
+                    }
+                    current.h3.push(item.text);
+                  }
+                }
+                if (current) headings.push(current);
                 structureJson = {
                   keyword,
                   language: languageName,
-                  headings: [],
-                  note: "Estructura extraída del contenido HTML"
+                  headings
                 };
               } else {
                 htmlContent = fullContent;
@@ -329,7 +426,7 @@ Genera la estructura completa ahora:`;
         error: friendlyError 
       })}\n\n`),
       {
-        status: 500,
+        status: 200,
         headers: {
           'Content-Type': 'text/event-stream',
           'Cache-Control': 'no-cache',

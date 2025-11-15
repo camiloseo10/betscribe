@@ -50,14 +50,8 @@ export default function Navigation() {
               className="flex items-center gap-2 text-2xl font-bold text-foreground hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-md px-2"
               aria-label="Inicio"
             >
-              <Image 
-                src="https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f569cda0-ee20-4bd2-8cf9-54ed59ab960e/generated_images/modern-minimalist-logo-icon-for-quill-a--1c951a44-20251114010902.jpg"
-                alt="Quill Logo"
-                width={32}
-                height={32}
-                className="rounded-lg"
-              />
-              <span>Quill</span>
+              <Image src="/logo-snapcopy.svg" alt="Snapcopy Logo" width={32} height={32} className="rounded-md" />
+              <span className="ml-1">Snapcopy</span>
             </a>
           </div>
 
@@ -75,7 +69,7 @@ export default function Navigation() {
                   href="#como-funciona"
                   className="px-4 py-2 text-sm font-medium text-foreground hover:text-primary transition-colors rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                 >
-                  Cómo Funciona
+                  Cómo funciona
                 </a>
                 <a
                   href="#precios"
@@ -92,7 +86,7 @@ export default function Navigation() {
                   className="gap-2"
                 >
                   <Sparkles className="w-4 h-4" />
-                  Generar Artículo
+                  Generar artículo
                 </Button>
                 <Button
                   variant="ghost"
@@ -100,7 +94,7 @@ export default function Navigation() {
                   className="gap-2"
                 >
                   <Lightbulb className="w-4 h-4" />
-                  Ideas de Contenido
+                  Ideas de contenido
                 </Button>
                 <Button
                   variant="ghost"
@@ -110,16 +104,30 @@ export default function Navigation() {
                   <ListTree className="w-4 h-4" />
                   Estructura SEO
                 </Button>
-                <Button
-                  variant="ghost"
-                  onClick={() => router.push("/entrenar-ia")}
-                  className="gap-2"
-                >
-                  <Settings className="w-4 h-4" />
-                  Entrenar IA
-                </Button>
-              </>
-            )}
+              <Button
+                variant="ghost"
+                onClick={() => router.push("/entrenar-ia")}
+                className="gap-2"
+              >
+                <Settings className="w-4 h-4" />
+                Entrenar IA
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => router.push("/demo")}
+                className="gap-2"
+              >
+                Demo
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => router.push("/cuenta")}
+                className="gap-2"
+              >
+                Cuenta
+              </Button>
+            </>
+          )}
           </div>
 
           {/* Right side buttons */}
@@ -138,7 +146,7 @@ export default function Navigation() {
                 className="focus:ring-2 focus:ring-ring focus:ring-offset-2"
                 onClick={() => router.push("/generar")}
               >
-                Comenzar Gratis
+                Comenzar gratis
               </Button>
             )}
           </div>
@@ -192,7 +200,7 @@ export default function Navigation() {
                   role="menuitem"
                   onClick={() => setIsOpen(false)}
                 >
-                  Cómo Funciona
+                  Cómo funciona
                 </a>
                 <a
                   href="#precios"
@@ -214,7 +222,7 @@ export default function Navigation() {
                   }}
                 >
                   <Sparkles className="w-4 h-4" />
-                  Generar Artículo
+                  Generar artículo
                 </Button>
                 <Button
                   variant="ghost"
@@ -225,7 +233,7 @@ export default function Navigation() {
                   }}
                 >
                   <Lightbulb className="w-4 h-4" />
-                  Ideas de Contenido
+                  Ideas de contenido
                 </Button>
                 <Button
                   variant="ghost"

@@ -9,22 +9,23 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "sonner"
-import {
-  Loader2,
-  Sparkles,
-  Download,
-  Eye,
-  Settings,
-  Trash2,
-  FileText,
-  ExternalLink,
-  RefreshCw,
-  Globe,
-  Lightbulb,
-  Target,
-  TrendingUp,
-  Table as TableIcon,
-} from "lucide-react"
+  import {
+    Loader2,
+    Sparkles,
+    Download,
+    Eye,
+    Settings,
+    Trash2,
+    FileText,
+    ExternalLink,
+    RefreshCw,
+    Globe,
+    Lightbulb,
+    Target,
+    TrendingUp,
+    Table as TableIcon,
+    Copy,
+  } from "lucide-react"
 import { Document, Paragraph, TextRun, Packer, Table, TableRow, TableCell, WidthType, AlignmentType, HeadingLevel } from "docx"
 import { saveAs } from "file-saver"
 
@@ -34,11 +35,13 @@ export default function IdeasContenidoPage() {
   const [configurations, setConfigurations] = useState<any[]>([])
   const [selectedConfig, setSelectedConfig] = useState<any>(null)
   const [contentIdeasList, setContentIdeasList] = useState<any[]>([])
+  const [selectedIdeaIds, setSelectedIdeaIds] = useState<number[]>([])
   const [loadingList, setLoadingList] = useState(true)
   const [activeTab, setActiveTab] = useState("generate")
 
   // Form
   const [topic, setTopic] = useState("")
+  const [websiteUrl, setWebsiteUrl] = useState("")
   const [selectedLanguage, setSelectedLanguage] = useState("es")
 
   // Generated content ideas
@@ -125,6 +128,7 @@ export default function IdeasContenidoPage() {
         body: JSON.stringify({
           configId: selectedConfig.id,
           topic,
+          websiteUrl: websiteUrl || undefined,
           language: selectedLanguage,
         }),
       })
@@ -152,6 +156,11 @@ export default function IdeasContenidoPage() {
 
             if (json.type === "content_ideas_id") {
               contentIdeasId = json.contentIdeasId
+            } else if (json.type === "info") {
+              // Show info message for website analysis
+              toast.info("Analizando sitio web", {
+                description: json.message
+              })
             } else if (json.type === "content") {
               if (hasShownRetry) {
                 setRetrying(false)
@@ -234,23 +243,33 @@ export default function IdeasContenidoPage() {
                   new TableRow({
                     children: [
                       new TableCell({
-                        children: [new Paragraph({ text: "Keyword", bold: true })],
+                        children: [new Paragraph({
+                          children: [new TextRun({ text: "Keyword", bold: true })]
+                        })],
                         width: { size: 15, type: WidthType.PERCENTAGE },
                       }),
                       new TableCell({
-                        children: [new Paragraph({ text: "Title SEO", bold: true })],
+                        children: [new Paragraph({
+                          children: [new TextRun({ text: "Title SEO", bold: true })]
+                        })],
                         width: { size: 20, type: WidthType.PERCENTAGE },
                       }),
                       new TableCell({
-                        children: [new Paragraph({ text: "Meta Description", bold: true })],
+                        children: [new Paragraph({
+                          children: [new TextRun({ text: "Meta Description", bold: true })]
+                        })],
                         width: { size: 25, type: WidthType.PERCENTAGE },
                       }),
                       new TableCell({
-                        children: [new Paragraph({ text: "Objetivo", bold: true })],
+                        children: [new Paragraph({
+                          children: [new TextRun({ text: "Objetivo", bold: true })]
+                        })],
                         width: { size: 15, type: WidthType.PERCENTAGE },
                       }),
                       new TableCell({
-                        children: [new Paragraph({ text: "Estrategia", bold: true })],
+                        children: [new Paragraph({
+                          children: [new TextRun({ text: "Estrategia", bold: true })]
+                        })],
                         width: { size: 25, type: WidthType.PERCENTAGE },
                       }),
                     ],
@@ -292,18 +311,83 @@ export default function IdeasContenidoPage() {
     }
   }
 
+  const downloadAsCSV = async (contentIdeas: any) => {
+    try {
+      const ideas = JSON.parse(contentIdeas.ideas)
+      const headers = ["Keyword", "Title SEO", "Meta Description", "Objetivo", "Estrategia"]
+      const rows: string[][] = ideas.map((idea: any) => [
+        idea.keyword || "",
+        idea.seo_title || "",
+        idea.meta_description || "",
+        idea.keyword_objective || "",
+        idea.content_strategy || "",
+      ])
+      const escape = (val: string) => {
+        const s = String(val).replace(/"/g, '""')
+        return /[",\n]/.test(s) ? `"${s}"` : s
+      }
+      const csv = [headers.join(","), ...rows.map((r: string[]) => r.map(escape).join(","))].join("\n")
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" })
+      saveAs(blob, `ideas-contenido-${contentIdeas.topic.replace(/[^a-z0-9]/gi, "-").toLowerCase()}.csv`)
+      toast.success("Ideas descargadas en CSV")
+    } catch (error) {
+      console.error("Error generating CSV:", error)
+      toast.error("Error al generar el archivo CSV")
+    }
+  }
+
   const openInGoogleDocs = async (contentIdeas: any) => {
     try {
-      await downloadAsWord(contentIdeas)
-      
-      toast.success("Archivo descargado. Súbelo a Google Drive y ábrelo con Google Docs")
-      
+      await downloadAsCSV(contentIdeas)
+      toast.success("Archivo descargado. Súbelo a Google Drive y ábrelo con Google Sheets")
       setTimeout(() => {
-        window.open("https://drive.google.com/drive/my-drive", "_blank")
+        window.open("https://sheets.new", "_blank")
       }, 1000)
     } catch (error) {
-      console.error("Error opening in Google Docs:", error)
-      toast.error("Error al preparar el documento para Google Docs")
+      console.error("Error opening in Google Sheets:", error)
+      toast.error("Error al preparar el archivo para Google Sheets")
+    }
+  }
+
+  const copyIdeas = async (contentIdeas: any) => {
+    try {
+      const ideas = JSON.parse(contentIdeas.ideas)
+      const plain = ideas.map((idea: any, i: number) => {
+        return `${i + 1}. ${idea.keyword}\n${idea.seo_title}\n${idea.meta_description}\n${idea.keyword_objective}\n${idea.content_strategy}\n`
+      }).join("\n")
+      const tableRows = ideas.map((idea: any) => `
+        <tr>
+          <td style=\"padding:6px;border:1px solid #ddd;\">${idea.keyword || ''}</td>
+          <td style=\"padding:6px;border:1px solid #ddd;\">${idea.seo_title || ''}</td>
+          <td style=\"padding:6px;border:1px solid #ddd;\">${idea.meta_description || ''}</td>
+          <td style=\"padding:6px;border:1px solid #ddd;\">${idea.keyword_objective || ''}</td>
+          <td style=\"padding:6px;border:1px solid #ddd;\">${idea.content_strategy || ''}</td>
+        </tr>`).join("")
+      const html = `
+        <table style=\"border-collapse:collapse;color:#000;font-size:13px;\">
+          <thead>
+            <tr>
+              <th style=\"padding:6px;border:1px solid #ddd;\">Keyword</th>
+              <th style=\"padding:6px;border:1px solid #ddd;\">Title SEO</th>
+              <th style=\"padding:6px;border:1px solid #ddd;\">Meta Description</th>
+              <th style=\"padding:6px;border:1px solid #ddd;\">Objetivo</th>
+              <th style=\"padding:6px;border:1px solid #ddd;\">Estrategia</th>
+            </tr>
+          </thead>
+          <tbody>${tableRows}</tbody>
+        </table>`
+      if (navigator.clipboard && 'write' in navigator.clipboard && typeof (window as any).ClipboardItem !== 'undefined') {
+        const item = new (window as any).ClipboardItem({
+          'text/html': new Blob([html], { type: 'text/html' }),
+          'text/plain': new Blob([plain], { type: 'text/plain' }),
+        })
+        await navigator.clipboard.write([item])
+      } else {
+        await navigator.clipboard.writeText(plain)
+      }
+      toast.success("Ideas copiadas al portapapeles")
+    } catch (e) {
+      toast.error("No se pudieron copiar las ideas")
     }
   }
 
@@ -344,21 +428,44 @@ export default function IdeasContenidoPage() {
     }
   }
 
+  const toggleSelectIdea = (id: number) => {
+    setSelectedIdeaIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
+  }
+
+  const selectAllIdeas = () => {
+    if (selectedIdeaIds.length === contentIdeasList.length) {
+      setSelectedIdeaIds([])
+    } else {
+      setSelectedIdeaIds(contentIdeasList.map(i => i.id))
+    }
+  }
+
+  const bulkDeleteIdeas = async () => {
+    if (selectedIdeaIds.length === 0) return
+    if (!confirm(`¿Eliminar ${selectedIdeaIds.length} listas seleccionadas?`)) return
+    try {
+      await Promise.all(selectedIdeaIds.map(id => fetch(`/api/content-ideas?id=${id}`, { method: 'DELETE' })))
+      toast.success(`Listas eliminadas: ${selectedIdeaIds.length}`)
+      setSelectedIdeaIds([])
+      loadContentIdeasList()
+    } catch (e) {
+      toast.error('Error al eliminar listas seleccionadas')
+    }
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+    <div className="min-h-screen bg-background">
       <Navigation />
 
       <main className="container mx-auto px-4 py-12 pt-24">
         {/* Hero Section */}
         <div className="mb-12 text-center max-w-3xl mx-auto">
-          <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 rounded-full bg-gradient-to-r from-yellow-500/10 via-orange-500/10 to-primary/10 border border-primary/20 backdrop-blur-sm">
-            <Lightbulb className="w-4 h-4 text-yellow-500 animate-pulse" />
-            <span className="text-sm font-medium bg-gradient-to-r from-yellow-600 to-orange-600 dark:from-yellow-400 dark:to-orange-400 bg-clip-text text-transparent">
-              Generador de Ideas con IA
-            </span>
+          <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 rounded-full bg-secondary border border-border">
+            <Lightbulb className="w-4 h-4 text-primary animate-pulse" />
+            <span className="text-sm font-medium text-foreground">Generador de ideas con IA</span>
           </div>
-          <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-foreground via-foreground to-primary bg-clip-text text-transparent">
-            Ideas de Contenido SEO
+          <h1 className="text-5xl font-bold mb-4 text-foreground">
+            Ideas de contenido SEO
           </h1>
           <p className="text-muted-foreground text-lg leading-relaxed">
             La IA investiga tu tema y genera 50 ideas únicas de contenido optimizadas para SEO, 
@@ -367,21 +474,21 @@ export default function IdeasContenidoPage() {
 
           {/* Stats */}
           <div className="grid grid-cols-3 gap-4 mt-8 max-w-2xl mx-auto">
-            <div className="bg-card/50 backdrop-blur-sm border border-border rounded-xl p-4 hover:shadow-lg transition-shadow">
+            <div className="bg-card border border-border rounded-xl p-4">
               <div className="flex items-center justify-center gap-2 mb-1">
                 <Lightbulb className="w-5 h-5 text-yellow-500" />
                 <span className="text-2xl font-bold text-foreground">50</span>
               </div>
               <p className="text-xs text-muted-foreground">Ideas únicas</p>
             </div>
-            <div className="bg-card/50 backdrop-blur-sm border border-border rounded-xl p-4 hover:shadow-lg transition-shadow">
+            <div className="bg-card border border-border rounded-xl p-4">
               <div className="flex items-center justify-center gap-2 mb-1">
                 <Target className="w-5 h-5 text-green-500" />
                 <span className="text-2xl font-bold text-foreground">100%</span>
               </div>
               <p className="text-xs text-muted-foreground">SEO optimizado</p>
             </div>
-            <div className="bg-card/50 backdrop-blur-sm border border-border rounded-xl p-4 hover:shadow-lg transition-shadow">
+            <div className="bg-card border border-border rounded-xl p-4">
               <div className="flex items-center justify-center gap-2 mb-1">
                 <TrendingUp className="w-5 h-5 text-blue-500" />
                 <span className="text-2xl font-bold text-foreground">{contentIdeasList.length}</span>
@@ -392,12 +499,12 @@ export default function IdeasContenidoPage() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 h-12 bg-card/50 backdrop-blur-sm border border-border shadow-sm">
-            <TabsTrigger value="generate" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-500 data-[state=active]:to-orange-500 data-[state=active]:text-white">
-              Generar Nuevas
+          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 h-12 bg-card border border-border">
+            <TabsTrigger value="generate" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              Generar nuevas
             </TabsTrigger>
-            <TabsTrigger value="list" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-500 data-[state=active]:to-orange-500 data-[state=active]:text-white">
-              Mis Listas ({contentIdeasList.length})
+            <TabsTrigger value="list" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              Mis listas ({contentIdeasList.length})
             </TabsTrigger>
           </TabsList>
 
@@ -407,10 +514,10 @@ export default function IdeasContenidoPage() {
               {/* Left: Form */}
               <div className="space-y-6">
                 {/* AI Profile Card */}
-                <div className="bg-gradient-to-br from-yellow-500/10 via-orange-500/5 to-transparent rounded-2xl border border-yellow-500/20 p-6 shadow-lg backdrop-blur-sm">
+                <div className="rounded-2xl border border-border p-6 bg-card">
                   <div className="flex items-center gap-2 mb-4">
-                    <div className="p-2 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-lg">
-                      <Settings className="w-5 h-5 text-white" />
+                    <div className="p-2 rounded-lg bg-secondary">
+                      <Settings className="w-5 h-5" />
                     </div>
                     <h2 className="text-xl font-bold">Perfil de IA</h2>
                   </div>
@@ -423,10 +530,7 @@ export default function IdeasContenidoPage() {
                       <p className="text-muted-foreground mb-4">
                         No tienes perfiles guardados
                       </p>
-                      <Button 
-                        onClick={() => (window.location.href = "/entrenar-ia")}
-                        className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600"
-                      >
+                      <Button onClick={() => (window.location.href = "/entrenar-ia")}>
                         Crear Perfil
                       </Button>
                     </div>
@@ -435,7 +539,7 @@ export default function IdeasContenidoPage() {
                       <div className="space-y-2 mb-4">
                         <Label className="text-sm font-medium">Perfil activo</Label>
                         <select
-                          className="w-full p-3 rounded-lg border border-border bg-background/50 backdrop-blur-sm hover:border-primary/50 transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
+                          className="w-full p-3 rounded-lg border border-border bg-background hover:border-primary/50 transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
                           value={selectedConfig?.id || ""}
                           onChange={(e) => {
                             const config = configurations.find(
@@ -456,7 +560,7 @@ export default function IdeasContenidoPage() {
                       </div>
 
                       {selectedConfig && (
-                        <div className="p-4 rounded-xl bg-background/50 backdrop-blur-sm border border-border space-y-3">
+                        <div className="p-4 rounded-xl bg-background border border-border space-y-3">
                           <div className="flex items-start gap-2">
                             <FileText className="w-4 h-4 text-primary mt-0.5" />
                             <div className="flex-1">
@@ -478,12 +582,12 @@ export default function IdeasContenidoPage() {
                 </div>
 
                 {/* Form Card */}
-                <div className="bg-card rounded-2xl border border-border p-6 shadow-lg backdrop-blur-sm space-y-5">
+                <div className="bg-card rounded-2xl border border-border p-6 space-y-5">
                   <div className="flex items-center gap-2 mb-2">
-                    <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg">
-                      <Lightbulb className="w-5 h-5 text-white" />
+                    <div className="p-2 rounded-lg bg-secondary">
+                      <Lightbulb className="w-5 h-5" />
                     </div>
-                    <h2 className="text-xl font-bold">Tema a Investigar</h2>
+                    <h2 className="text-xl font-bold">Tema a investigar</h2>
                   </div>
 
                   <div className="space-y-2">
@@ -497,8 +601,21 @@ export default function IdeasContenidoPage() {
                       onChange={(e) => setTopic(e.target.value)}
                       className="h-11 bg-background/50 border-border hover:border-primary/50 focus:border-primary transition-colors"
                     />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="websiteUrl" className="text-sm font-medium flex items-center gap-1">
+                      URL del sitio web (opcional)
+                    </Label>
+                    <Input
+                      id="websiteUrl"
+                      placeholder="https://www.ejemplo.com"
+                      value={websiteUrl}
+                      onChange={(e) => setWebsiteUrl(e.target.value)}
+                      className="h-11 bg-background/50 border-border hover:border-primary/50 focus:border-primary transition-colors"
+                    />
                     <p className="text-xs text-muted-foreground">
-                      La IA investigará este tema y generará 50 ideas de contenido
+                      Si proporcionas una URL, analizaré tu sitio web y generaré ideas de contenido basadas en lagunas temáticas
                     </p>
                   </div>
 
@@ -527,7 +644,7 @@ export default function IdeasContenidoPage() {
                   <Button
                     onClick={handleGenerate}
                     disabled={streaming || !selectedConfig}
-                    className="w-full h-12 text-base font-semibold bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 shadow-lg hover:shadow-xl transition-all"
+                    className="w-full h-12 text-base font-semibold"
                     size="lg"
                   >
                     {streaming ? (
@@ -547,7 +664,7 @@ export default function IdeasContenidoPage() {
                     ) : (
                       <>
                         <Lightbulb className="mr-2 h-5 w-5" />
-                        Generar 50 Ideas
+                        Generar 50 ideas
                       </>
                     )}
                   </Button>
@@ -569,11 +686,11 @@ export default function IdeasContenidoPage() {
               </div>
 
               {/* Right: Preview */}
-              <div id="preview-section" className="bg-card rounded-2xl border border-border p-6 shadow-lg backdrop-blur-sm min-h-[600px]">
+              <div id="preview-section" className="bg-card rounded-2xl border border-border p-6 min-h-[600px]">
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-2">
-                    <div className="p-2 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg">
-                      <TableIcon className="w-5 h-5 text-white" />
+                    <div className="p-2 rounded-lg bg-secondary">
+                      <TableIcon className="w-5 h-5" />
                     </div>
                     <h2 className="text-xl font-bold">Vista Previa</h2>
                   </div>
@@ -592,7 +709,7 @@ export default function IdeasContenidoPage() {
                         size="sm"
                         variant="outline"
                         onClick={() => openInGoogleDocs(generatedIdeas)}
-                        title="Abrir en Google Docs"
+                        title="Abrir en Google Sheets"
                         className="hover:bg-primary/10 hover:text-primary hover:border-primary/50"
                       >
                         <ExternalLink className="w-4 h-4" />
@@ -607,7 +724,7 @@ export default function IdeasContenidoPage() {
                       <TableIcon className="w-10 h-10 opacity-50" />
                     </div>
                     <p className="text-lg font-medium">Las ideas generadas aparecerán aquí</p>
-                    <p className="text-sm mt-2">Completa el formulario y haz clic en "Generar 50 Ideas"</p>
+                    <p className="text-sm mt-2">Completa el formulario y haz clic en "Generar 50 ideas"</p>
                   </div>
                 )}
 
@@ -621,19 +738,19 @@ export default function IdeasContenidoPage() {
 
                 {generatedIdeas && (
                   <div className="space-y-4">
-                    <div className="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/20 rounded-lg p-4">
-                      <h3 className="font-semibold text-lg mb-2">{generatedIdeas.topic}</h3>
-                      <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                        <Badge variant="secondary" className="bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-500/20">
-                          {JSON.parse(generatedIdeas.ideas).length} ideas
-                        </Badge>
-                        <Badge variant="secondary" className="bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20 flex items-center gap-1">
-                          <Globe className="w-3 h-3" />
-                          {languageOptions.find(l => l.code === generatedIdeas.language)?.flag}{' '}
-                          {languageOptions.find(l => l.code === generatedIdeas.language)?.name}
-                        </Badge>
-                      </div>
+                  <div className="bg-secondary border border-border rounded-lg p-4">
+                    <h3 className="font-semibold text-lg mb-2">{generatedIdeas.topic}</h3>
+                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                      <Badge variant="secondary" className="bg-secondary text-foreground border-border">
+                        {JSON.parse(generatedIdeas.ideas).length} ideas
+                      </Badge>
+                      <Badge variant="secondary" className="bg-secondary text-foreground border-border flex items-center gap-1">
+                        <Globe className="w-3 h-3" />
+                        {languageOptions.find(l => l.code === generatedIdeas.language)?.flag}{' '}
+                        {languageOptions.find(l => l.code === generatedIdeas.language)?.name}
+                      </Badge>
                     </div>
+                  </div>
 
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm border-collapse">
@@ -673,12 +790,12 @@ export default function IdeasContenidoPage() {
 
           {/* List Tab */}
           <TabsContent value="list" className="space-y-6">
-            <div className="bg-card rounded-2xl border border-border p-6 shadow-lg backdrop-blur-sm">
+            <div className="bg-card rounded-2xl border border-border p-6">
               <div className="flex items-center gap-2 mb-6">
-                <div className="p-2 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg">
-                  <FileText className="w-5 h-5 text-white" />
+                <div className="p-2 rounded-lg bg-secondary">
+                  <FileText className="w-5 h-5" />
                 </div>
-                <h2 className="text-xl font-bold">Listas de Ideas Generadas</h2>
+                <h2 className="text-xl font-bold">Listas de ideas generadas</h2>
               </div>
 
               {loadingList ? (
@@ -692,17 +809,29 @@ export default function IdeasContenidoPage() {
                     <FileText className="w-10 h-10 opacity-50" />
                   </div>
                   <p className="text-lg font-medium">No tienes listas de ideas todavía</p>
-                  <p className="text-sm mt-2">Crea tu primera lista en la pestaña "Generar Nuevas"</p>
+                  <p className="text-sm mt-2">Crea tu primera lista en la pestaña "Generar nuevas"</p>
                 </div>
               ) : (
                 <div className="space-y-4">
+                  <div className="flex items-center justify-between p-3 rounded-lg border border-border bg-card/50">
+                    <div className="flex items-center gap-3">
+                      <input type="checkbox" checked={selectedIdeaIds.length === contentIdeasList.length && contentIdeasList.length > 0} onChange={selectAllIdeas} />
+                      <span className="text-sm">Seleccionar todo</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" variant="destructive" onClick={bulkDeleteIdeas} disabled={selectedIdeaIds.length === 0}>
+                        Eliminar seleccionados ({selectedIdeaIds.length})
+                      </Button>
+                    </div>
+                  </div>
                   {contentIdeasList.map((item) => (
                     <div
                       key={item.id}
-                      className="flex items-start justify-between p-5 rounded-xl border border-border hover:border-primary/50 hover:shadow-md transition-all bg-card/50 backdrop-blur-sm"
+                      className="flex items-start justify-between p-5 rounded-xl border border-border hover:border-primary/50 transition-all bg-card"
                     >
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
+                          <input type="checkbox" checked={selectedIdeaIds.includes(item.id)} onChange={() => toggleSelectIdea(item.id)} />
                           <h3 className="font-semibold text-lg">{item.topic}</h3>
                           <Badge
                             variant={
@@ -760,8 +889,17 @@ export default function IdeasContenidoPage() {
                         <Button
                           size="sm"
                           variant="outline"
+                          onClick={() => copyIdeas(item)}
+                          title="Copiar lista"
+                          className="hover:bg-primary/10 hover:text-primary hover:border-primary/50"
+                        >
+                          <Copy className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
                           onClick={() => openInGoogleDocs(item)}
-                          title="Abrir en Google Docs"
+                          title="Abrir en Google Sheets"
                           className="hover:bg-orange-500/10 hover:text-orange-600 hover:border-orange-500/50"
                         >
                           <ExternalLink className="w-4 h-4" />

@@ -36,6 +36,7 @@ export default function GenerarPage() {
   const [configurations, setConfigurations] = useState<any[]>([])
   const [selectedConfig, setSelectedConfig] = useState<any>(null)
   const [articles, setArticles] = useState<any[]>([])
+  const [selectedArticleIds, setSelectedArticleIds] = useState<number[]>([])
   const [loadingArticles, setLoadingArticles] = useState(true)
   const [activeTab, setActiveTab] = useState("generate")
 
@@ -96,10 +97,20 @@ export default function GenerarPage() {
       const response = await fetch("/api/articles?limit=50")
       if (response.ok) {
         const data = await response.json()
-        setArticles(data)
+        // El API devuelve { success: true, articles: [...], total: n }
+        if (data.articles && Array.isArray(data.articles)) {
+          setArticles(data.articles)
+        } else {
+          console.warn("Formato inesperado de respuesta:", data)
+          setArticles([])
+        }
+      } else {
+        console.error("Error en la respuesta del API:", response.status)
+        setArticles([])
       }
     } catch (error) {
       console.error("Error loading articles:", error)
+      setArticles([])
     } finally {
       setLoadingArticles(false)
     }
@@ -587,6 +598,26 @@ ${article.content}
     }
   }
 
+  const copyArticleContent = (article: any) => {
+    try {
+      const html = article.content || ""
+      const plain = html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim()
+      if (navigator.clipboard && 'write' in navigator.clipboard && typeof (window as any).ClipboardItem !== 'undefined') {
+        const item = new (window as any).ClipboardItem({
+          'text/html': new Blob([html], { type: 'text/html' }),
+          'text/plain': new Blob([plain], { type: 'text/plain' }),
+        })
+        navigator.clipboard.write([item])
+      } else {
+        navigator.clipboard.writeText(plain)
+      }
+      toast.success("Contenido copiado al portapapeles")
+    } catch (error) {
+      console.error("Error copying content:", error)
+      toast.error("No se pudo copiar el contenido")
+    }
+  }
+
   const viewArticle = (article: any) => {
     setGeneratedArticle(article)
     setStreamedContent(article.content)
@@ -627,21 +658,44 @@ ${article.content}
     }
   }
 
+  const toggleSelectArticle = (id: number) => {
+    setSelectedArticleIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
+  }
+
+  const selectAllArticles = () => {
+    if (selectedArticleIds.length === articles.length) {
+      setSelectedArticleIds([])
+    } else {
+      setSelectedArticleIds(articles.map(a => a.id))
+    }
+  }
+
+  const bulkDeleteArticles = async () => {
+    if (selectedArticleIds.length === 0) return
+    if (!confirm(`¿Eliminar ${selectedArticleIds.length} artículos seleccionados?`)) return
+    try {
+      await Promise.all(selectedArticleIds.map(id => fetch(`/api/articles?id=${id}`, { method: 'DELETE' })))
+      toast.success(`Artículos eliminados: ${selectedArticleIds.length}`)
+      setSelectedArticleIds([])
+      loadArticles()
+    } catch (e) {
+      toast.error('Error al eliminar artículos seleccionados')
+    }
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+    <div className="min-h-screen bg-background">
       <Navigation />
 
       <main className="container mx-auto px-4 py-12 pt-24">
         {/* Hero Section */}
         <div className="mb-12 text-center max-w-3xl mx-auto">
-          <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 rounded-full bg-gradient-to-r from-purple-500/10 via-blue-500/10 to-primary/10 border border-primary/20 backdrop-blur-sm">
+          <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 rounded-full bg-secondary border border-border">
             <Sparkles className="w-4 h-4 text-primary animate-pulse" />
-            <span className="text-sm font-medium bg-gradient-to-r from-purple-600 to-blue-600 dark:from-purple-400 dark:to-blue-400 bg-clip-text text-transparent">
-              IA Generativa Avanzada
-            </span>
+            <span className="text-sm font-medium text-foreground">IA generativa avanzada</span>
           </div>
-          <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-foreground via-foreground to-primary bg-clip-text text-transparent">
-            Genera Artículos SEO
+          <h1 className="text-5xl font-bold mb-4 text-foreground">
+            Genera artículos SEO
           </h1>
           <p className="text-muted-foreground text-lg leading-relaxed">
             Crea contenido optimizado en minutos con tu configuración personalizada. 
@@ -675,12 +729,12 @@ ${article.content}
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 h-12 bg-card/50 backdrop-blur-sm border border-border shadow-sm">
-            <TabsTrigger value="generate" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-blue-500 data-[state=active]:text-white">
-              Generar Nuevo
+          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 h-12 bg-card border border-border shadow-sm">
+            <TabsTrigger value="generate" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              Generar nuevo
             </TabsTrigger>
-            <TabsTrigger value="articles" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-blue-500 data-[state=active]:text-white">
-              Mis Artículos ({articles.length})
+            <TabsTrigger value="articles" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              Mis artículos ({articles.length})
             </TabsTrigger>
           </TabsList>
 
@@ -690,10 +744,10 @@ ${article.content}
               {/* Left: Form */}
               <div className="space-y-6">
                 {/* AI Profile Card */}
-                <div className="bg-gradient-to-br from-purple-500/10 via-blue-500/5 to-transparent rounded-2xl border border-purple-500/20 p-6 shadow-lg backdrop-blur-sm">
+                <div className="rounded-2xl border border-border p-6 bg-card">
                   <div className="flex items-center gap-2 mb-4">
-                    <div className="p-2 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg">
-                      <Settings className="w-5 h-5 text-white" />
+                    <div className="p-2 rounded-lg bg-secondary">
+                      <Settings className="w-5 h-5" />
                     </div>
                     <h2 className="text-xl font-bold">Perfil de IA</h2>
                   </div>
@@ -706,10 +760,7 @@ ${article.content}
                       <p className="text-muted-foreground mb-4">
                         No tienes perfiles guardados
                       </p>
-                      <Button 
-                        onClick={() => (window.location.href = "/entrenar-ia")}
-                        className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
-                      >
+                      <Button onClick={() => (window.location.href = "/entrenar-ia")}>
                         <Plus className="w-4 h-4 mr-2" />
                         Crear Perfil
                       </Button>
@@ -772,12 +823,12 @@ ${article.content}
                 </div>
 
                 {/* Article Details Card */}
-                <div className="bg-card rounded-2xl border border-border p-6 shadow-lg backdrop-blur-sm space-y-5">
+                <div className="bg-card rounded-2xl border border-border p-6 space-y-5">
                   <div className="flex items-center gap-2 mb-2">
-                    <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg">
-                      <FileText className="w-5 h-5 text-white" />
+                    <div className="p-2 rounded-lg bg-secondary">
+                      <FileText className="w-5 h-5" />
                     </div>
-                    <h2 className="text-xl font-bold">Detalles del Artículo</h2>
+                    <h2 className="text-xl font-bold">Detalles del artículo</h2>
                   </div>
 
                   <div className="space-y-2">
@@ -844,7 +895,7 @@ ${article.content}
                   <Button
                     onClick={handleGenerateStream}
                     disabled={streaming || !selectedConfig}
-                    className="w-full h-12 text-base font-semibold bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 shadow-lg hover:shadow-xl transition-all"
+                    className="w-full h-12 text-base font-semibold"
                     size="lg"
                   >
                     {streaming ? (
@@ -864,7 +915,7 @@ ${article.content}
                     ) : (
                       <>
                         <Sparkles className="mr-2 h-5 w-5" />
-                        Generar Artículo
+                        Generar artículo
                       </>
                     )}
                   </Button>
@@ -886,13 +937,13 @@ ${article.content}
               </div>
 
               {/* Right: Preview */}
-              <div id="preview-section" className="bg-card rounded-2xl border border-border p-6 shadow-lg backdrop-blur-sm min-h-[600px]">
+              <div id="preview-section" className="bg-card rounded-2xl border border-border p-6 min-h-[600px]">
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-2">
-                    <div className="p-2 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg">
-                      <Eye className="w-5 h-5 text-white" />
+                    <div className="p-2 rounded-lg bg-secondary">
+                      <Eye className="w-5 h-5" />
                     </div>
-                    <h2 className="text-xl font-bold">Vista Previa</h2>
+                    <h2 className="text-xl font-bold">Vista previa</h2>
                   </div>
                   {generatedArticle && (
                     <div className="flex gap-2 flex-wrap">
@@ -964,10 +1015,10 @@ ${article.content}
 
           {/* Articles Tab */}
           <TabsContent value="articles" className="space-y-6">
-            <div className="bg-card rounded-2xl border border-border p-6 shadow-lg backdrop-blur-sm">
+            <div className="bg-card rounded-2xl border border-border p-6">
               <div className="flex items-center gap-2 mb-6">
-                <div className="p-2 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg">
-                  <FileText className="w-5 h-5 text-white" />
+                <div className="p-2 rounded-lg bg-secondary">
+                  <FileText className="w-5 h-5" />
                 </div>
                 <h2 className="text-xl font-bold">Artículos Generados</h2>
               </div>
@@ -983,10 +1034,21 @@ ${article.content}
                     <FileText className="w-10 h-10 opacity-50" />
                   </div>
                   <p className="text-lg font-medium">No tienes artículos generados todavía</p>
-                  <p className="text-sm mt-2">Crea tu primer artículo en la pestaña "Generar Nuevo"</p>
+                  <p className="text-sm mt-2">Crea tu primer artículo en la pestaña "Generar nuevo"</p>
                 </div>
               ) : (
                 <div className="space-y-4">
+                  <div className="flex items-center justify-between p-3 rounded-lg border border-border bg-card/50">
+                    <div className="flex items-center gap-3">
+                      <input type="checkbox" checked={selectedArticleIds.length === articles.length && articles.length > 0} onChange={selectAllArticles} />
+                      <span className="text-sm">Seleccionar todo</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" variant="destructive" onClick={bulkDeleteArticles} disabled={selectedArticleIds.length === 0}>
+                        Eliminar seleccionados ({selectedArticleIds.length})
+                      </Button>
+                    </div>
+                  </div>
                   {articles.map((article) => (
                     <div
                       key={article.id}
@@ -994,6 +1056,7 @@ ${article.content}
                     >
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
+                          <input type="checkbox" checked={selectedArticleIds.includes(article.id)} onChange={() => toggleSelectArticle(article.id)} />
                           <h3 className="font-semibold text-lg">{article.title}</h3>
                           <Badge
                             variant={
@@ -1036,6 +1099,15 @@ ${article.content}
                           className="hover:bg-blue-500/10 hover:text-blue-600 hover:border-blue-500/50"
                         >
                           <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => copyArticleContent(article)}
+                          title="Copiar contenido"
+                          className="hover:bg-primary/10 hover:text-primary hover:border-primary/50"
+                        >
+                          <Copy className="w-4 h-4" />
                         </Button>
                         <Button
                           size="sm"

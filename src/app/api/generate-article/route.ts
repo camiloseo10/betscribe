@@ -4,6 +4,7 @@ import { buildArticlePrompt, extractMetadata, countWords } from "@/lib/prompt-bu
 import { db } from "@/db";
 import { aiConfigurations, articles } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { isFreeLimitReached, freeLimitMessage } from "@/lib/limits";
 
 interface GenerateArticleRequest {
   configId: number;
@@ -13,6 +14,14 @@ interface GenerateArticleRequest {
 }
 
 // Helper to format API error messages
+function sanitizeMessage(message?: string): string {
+  if (!message) return "Error inesperado";
+  return message
+    .replace(/([a-z]+:\/\/[^\s]+)|libsql:\/\/[^\s]+/gi, "[enlace oculto]")
+    .replace(/[\w.-]+\.turso\.io/gi, "[host oculto]")
+    .replace(/orchids/gi, "[cluster]");
+}
+
 function formatApiError(error: any): string {
   if (error.status === 429 || error.code === 429) {
     return "Has excedido el límite de solicitudes de la API de Gemini. Por favor espera unos minutos e intenta de nuevo. Considera actualizar tu plan en https://ai.google.dev/pricing";
@@ -23,7 +32,7 @@ function formatApiError(error: any): string {
   if (error.status === 403 || error.code === 403) {
     return "No tienes permisos para usar esta API. Verifica tu configuración de Google Cloud";
   }
-  return error.message || "Error desconocido al generar el artículo";
+  return sanitizeMessage(error.message) || "Error desconocido al generar el artículo";
 }
 
 export async function POST(req: NextRequest) {
@@ -60,6 +69,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Free plan limit check
+    if (await isFreeLimitReached("articles", configId)) {
+      return NextResponse.json({ error: freeLimitMessage("articles"), code: "FREE_LIMIT_REACHED" }, { status: 402 });
+    }
+
     // Create article record with "generating" status
     const now = new Date().toISOString();
     const newArticle = await db
@@ -86,6 +100,14 @@ export async function POST(req: NextRequest) {
 
     // Generate content with Gemini
     try {
+      if (!geminiClient) {
+        const friendlyError = formatApiError({ status: 401, code: 401 });
+        return NextResponse.json(
+          { error: friendlyError, articleId },
+          { status: 401 }
+        );
+      }
+
       const response = await geminiClient.models.generateContent({
         model: MODEL_ID,
         contents: [
@@ -110,7 +132,10 @@ export async function POST(req: NextRequest) {
         throw new Error("No se encontró texto en la respuesta");
       }
 
-      const generatedContent = textPart.text;
+      const generatedContent = (textPart as any).text ?? "";
+      if (!generatedContent) {
+        throw new Error("El texto generado está vacío");
+      }
 
       // Extract metadata
       const { seoTitle, metaDescription, cleanContent } = extractMetadata(generatedContent);

@@ -1,0 +1,1 @@
+ALTER TABLE `content_ideas` ADD `website_url` text;

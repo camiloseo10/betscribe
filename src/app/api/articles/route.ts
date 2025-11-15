@@ -1,290 +1,136 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
-import { articles, aiConfigurations } from '@/db/schema';
-import { eq, like, or, desc, and } from 'drizzle-orm';
+import { articles } from '@/db/schema';
+import { eq } from 'drizzle-orm';
 
-export async function GET(request: NextRequest) {
-  try {
-    const searchParams = request.nextUrl.searchParams;
-    const id = searchParams.get('id');
-
-    // Single article fetch by ID
-    if (id) {
-      if (!id || isNaN(parseInt(id))) {
-        return NextResponse.json({
-          error: "Valid ID is required",
-          code: "INVALID_ID"
-        }, { status: 400 });
-      }
-
-      const article = await db.select()
-        .from(articles)
-        .where(eq(articles.id, parseInt(id)))
-        .limit(1);
-
-      if (article.length === 0) {
-        return NextResponse.json({
-          error: 'Article not found',
-          code: 'NOT_FOUND'
-        }, { status: 404 });
-      }
-
-      return NextResponse.json(article[0], { status: 200 });
-    }
-
-    // List articles with pagination, search, and filters
-    const limit = Math.min(parseInt(searchParams.get('limit') ?? '10'), 100);
-    const offset = parseInt(searchParams.get('offset') ?? '0');
-    const search = searchParams.get('search');
-    const status = searchParams.get('status');
-    const configId = searchParams.get('config_id');
-
-    let query = db.select().from(articles);
-
-    // Build WHERE conditions
-    const conditions = [];
-
-    // Search condition
-    if (search) {
-      conditions.push(
-        or(
-          like(articles.title, `%${search}%`),
-          like(articles.keyword, `%${search}%`)
-        )
-      );
-    }
-
-    // Status filter
-    if (status) {
-      conditions.push(eq(articles.status, status));
-    }
-
-    // Config ID filter
-    if (configId) {
-      if (isNaN(parseInt(configId))) {
-        return NextResponse.json({
-          error: "Valid config_id is required",
-          code: "INVALID_CONFIG_ID"
-        }, { status: 400 });
-      }
-      conditions.push(eq(articles.configId, parseInt(configId)));
-    }
-
-    // Apply WHERE conditions if any exist
-    if (conditions.length > 0) {
-      query = query.where(conditions.length === 1 ? conditions[0] : and(...conditions));
-    }
-
-    // Apply sorting and pagination
-    const results = await query
-      .orderBy(desc(articles.createdAt))
-      .limit(limit)
-      .offset(offset);
-
-    return NextResponse.json(results, { status: 200 });
-
-  } catch (error) {
-    console.error('GET error:', error);
-    return NextResponse.json({
-      error: 'Internal server error: ' + (error as Error).message
-    }, { status: 500 });
-  }
+interface ArticleData {
+  configId?: number;
+  title: string;
+  content: string;
+  keywords?: string[];
+  metaDescription?: string;
+  seoTitle?: string;
+  wordCount?: number;
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const {
-      configId,
-      title,
-      keyword,
-      secondaryKeywords,
-      content,
-      metaDescription,
-      seoTitle,
-      wordCount,
-      status,
-      errorMessage
-    } = body;
-
-    // Validate required fields
-    if (!configId) {
-      return NextResponse.json({
-        error: "configId is required",
-        code: "MISSING_CONFIG_ID"
-      }, { status: 400 });
+    const body: ArticleData = await request.json();
+    
+    // Validación
+    if (!body.title || !body.content) {
+      return NextResponse.json(
+        { error: 'Título y contenido son requeridos' },
+        { status: 400 }
+      );
     }
-
-    if (!title || title.trim() === '') {
-      return NextResponse.json({
-        error: "title is required and cannot be empty",
-        code: "MISSING_TITLE"
-      }, { status: 400 });
-    }
-
-    if (!keyword || keyword.trim() === '') {
-      return NextResponse.json({
-        error: "keyword is required and cannot be empty",
-        code: "MISSING_KEYWORD"
-      }, { status: 400 });
-    }
-
-    if (!secondaryKeywords) {
-      return NextResponse.json({
-        error: "secondaryKeywords is required",
-        code: "MISSING_SECONDARY_KEYWORDS"
-      }, { status: 400 });
-    }
-
-    if (!content || content.trim() === '') {
-      return NextResponse.json({
-        error: "content is required and cannot be empty",
-        code: "MISSING_CONTENT"
-      }, { status: 400 });
-    }
-
-    if (!metaDescription || metaDescription.trim() === '') {
-      return NextResponse.json({
-        error: "metaDescription is required and cannot be empty",
-        code: "MISSING_META_DESCRIPTION"
-      }, { status: 400 });
-    }
-
-    if (!seoTitle || seoTitle.trim() === '') {
-      return NextResponse.json({
-        error: "seoTitle is required and cannot be empty",
-        code: "MISSING_SEO_TITLE"
-      }, { status: 400 });
-    }
-
-    if (!wordCount) {
-      return NextResponse.json({
-        error: "wordCount is required",
-        code: "MISSING_WORD_COUNT"
-      }, { status: 400 });
-    }
-
-    // Validate configId is a valid integer
-    if (isNaN(parseInt(configId))) {
-      return NextResponse.json({
-        error: "configId must be a valid integer",
-        code: "INVALID_CONFIG_ID"
-      }, { status: 400 });
-    }
-
-    // Validate wordCount is a positive integer
-    if (isNaN(parseInt(wordCount)) || parseInt(wordCount) <= 0) {
-      return NextResponse.json({
-        error: "wordCount must be a positive integer",
-        code: "INVALID_WORD_COUNT"
-      }, { status: 400 });
-    }
-
-    // Validate secondaryKeywords is valid JSON array
-    try {
-      const parsedKeywords = JSON.parse(secondaryKeywords);
-      if (!Array.isArray(parsedKeywords)) {
-        return NextResponse.json({
-          error: "secondaryKeywords must be a valid JSON array",
-          code: "INVALID_SECONDARY_KEYWORDS"
-        }, { status: 400 });
-      }
-    } catch (e) {
-      return NextResponse.json({
-        error: "secondaryKeywords must be a valid JSON array",
-        code: "INVALID_SECONDARY_KEYWORDS"
-      }, { status: 400 });
-    }
-
-    // Validate status if provided
-    if (status && !['generating', 'completed', 'error'].includes(status)) {
-      return NextResponse.json({
-        error: "status must be one of: 'generating', 'completed', 'error'",
-        code: "INVALID_STATUS"
-      }, { status: 400 });
-    }
-
-    // Verify configId exists
-    const configExists = await db.select()
-      .from(aiConfigurations)
-      .where(eq(aiConfigurations.id, parseInt(configId)))
-      .limit(1);
-
-    if (configExists.length === 0) {
-      return NextResponse.json({
-        error: "Configuration with provided configId does not exist",
-        code: "CONFIG_NOT_FOUND"
-      }, { status: 400 });
-    }
-
-    // Create article
     const now = new Date().toISOString();
-    const newArticle = await db.insert(articles)
-      .values({
-        configId: parseInt(configId),
-        title: title.trim(),
-        keyword: keyword.trim(),
-        secondaryKeywords,
-        content: content.trim(),
-        metaDescription: metaDescription.trim(),
-        seoTitle: seoTitle.trim(),
-        wordCount: parseInt(wordCount),
-        status: status || 'generating',
-        errorMessage: errorMessage || null,
-        createdAt: now,
-        updatedAt: now
-      })
-      .returning();
+    const words = body.wordCount ?? body.content.split(/\s+/).length;
+    const keywords = body.keywords || [];
+    const inserted = await db.insert(articles).values({
+      configId: body.configId ?? undefined,
+      title: body.title,
+      keyword: keywords[0] || '',
+      secondaryKeywords: JSON.stringify(keywords),
+      content: body.content,
+      metaDescription: body.metaDescription || body.content.substring(0, 160),
+      seoTitle: body.seoTitle || body.title,
+      wordCount: words,
+      status: 'draft',
+      createdAt: now,
+      updatedAt: now,
+    }).returning();
 
-    return NextResponse.json(newArticle[0], { status: 201 });
-
+    return NextResponse.json({ success: true, article: inserted[0] });
+    
   } catch (error) {
-    console.error('POST error:', error);
-    return NextResponse.json({
-      error: 'Internal server error: ' + (error as Error).message
-    }, { status: 500 });
+    console.error('Error guardando artículo:', error);
+    return NextResponse.json(
+      { error: 'Error interno del servidor' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+    const limitParam = searchParams.get('limit');
+    const limit = limitParam ? parseInt(limitParam, 10) : undefined;
+    if (id) {
+      const rows = await db.select().from(articles).where(eq(articles.id, parseInt(id, 10))).limit(1);
+      if (rows.length === 0) return NextResponse.json({ error: 'Artículo no encontrado' }, { status: 404 });
+      return NextResponse.json({ success: true, article: rows[0] });
+    }
+    const rows = await db.select().from(articles);
+    const ordered = rows.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    const list = limit ? ordered.slice(0, limit) : ordered;
+    return NextResponse.json({ success: true, articles: list, total: rows.length });
+    
+  } catch (error) {
+    console.error('Error obteniendo artículos:', error);
+    return NextResponse.json(
+      { error: 'Error interno del servidor' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PUT(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { id, ...updates } = body;
+    
+    if (!id) {
+      return NextResponse.json(
+        { error: 'ID del artículo requerido' },
+        { status: 400 }
+      );
+    }
+    const now = new Date().toISOString();
+    const updated = await db.update(articles).set({
+      ...(updates.title ? { title: updates.title } : {}),
+      ...(updates.content ? { content: updates.content } : {}),
+      ...(updates.metaDescription ? { metaDescription: updates.metaDescription } : {}),
+      ...(updates.seoTitle ? { seoTitle: updates.seoTitle } : {}),
+      ...(updates.keyword ? { keyword: updates.keyword } : {}),
+      ...(updates.secondaryKeywords ? { secondaryKeywords: typeof updates.secondaryKeywords === 'string' ? updates.secondaryKeywords : JSON.stringify(updates.secondaryKeywords) } : {}),
+      ...(updates.wordCount ? { wordCount: updates.wordCount } : {}),
+      ...(updates.status ? { status: updates.status } : {}),
+      updatedAt: now,
+    }).where(eq(articles.id, parseInt(String(id), 10))).returning();
+    return NextResponse.json({ success: true, article: updated[0] });
+    
+  } catch (error) {
+    console.error('Error actualizando artículo:', error);
+    return NextResponse.json(
+      { error: 'Error interno del servidor' },
+      { status: 500 }
+    );
   }
 }
 
 export async function DELETE(request: NextRequest) {
   try {
-    const searchParams = request.nextUrl.searchParams;
+    const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
-
-    if (!id || isNaN(parseInt(id))) {
-      return NextResponse.json({
-        error: "Valid ID is required",
-        code: "INVALID_ID"
-      }, { status: 400 });
+    
+    if (!id) {
+      return NextResponse.json(
+        { error: 'ID del artículo requerido' },
+        { status: 400 }
+      );
     }
-
-    // Check if article exists
-    const existingArticle = await db.select()
-      .from(articles)
-      .where(eq(articles.id, parseInt(id)))
-      .limit(1);
-
-    if (existingArticle.length === 0) {
-      return NextResponse.json({
-        error: 'Article not found',
-        code: 'NOT_FOUND'
-      }, { status: 404 });
-    }
-
-    // Delete article
-    const deleted = await db.delete(articles)
-      .where(eq(articles.id, parseInt(id)))
-      .returning();
-
-    return NextResponse.json({
-      message: 'Article deleted successfully',
-      article: deleted[0]
-    }, { status: 200 });
-
+    const deleted = await db.delete(articles).where(eq(articles.id, parseInt(String(id), 10))).returning();
+    if (deleted.length === 0) return NextResponse.json({ error: 'Artículo no encontrado' }, { status: 404 });
+    return NextResponse.json({ success: true, message: 'Artículo eliminado exitosamente' });
+    
   } catch (error) {
-    console.error('DELETE error:', error);
-    return NextResponse.json({
-      error: 'Internal server error: ' + (error as Error).message
-    }, { status: 500 });
+    console.error('Error eliminando artículo:', error);
+    return NextResponse.json(
+      { error: 'Error interno del servidor' },
+      { status: 500 }
+    );
   }
 }

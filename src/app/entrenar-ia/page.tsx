@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
-import { Loader2, Sparkles, CheckCircle2, ArrowRight, ArrowLeft, Building2, Users, Heart, Settings, Eye, Trash2, Globe } from "lucide-react"
+import { Loader2, Sparkles, CheckCircle, ArrowRight, ArrowLeft, Building2, Users, Heart, Settings, Eye, Trash2, Globe } from "lucide-react"
 
 export default function EntrenarIAPage() {
   const router = useRouter()
@@ -214,10 +214,10 @@ export default function EntrenarIAPage() {
   }
 
   const stepIcons = [Building2, Users, Heart, Settings]
-  const stepTitles = ["Tu Negocio", "Tu Expertise", "Personalidad", "Contenido"]
+  const stepTitles = ["Tu negocio", "Tu expertise", "Personalidad", "Contenido"]
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
+    <div className="min-h-screen bg-background">
       <Navigation />
       
       <main className="container mx-auto px-4 py-8 md:py-12">
@@ -228,7 +228,7 @@ export default function EntrenarIAPage() {
             <span className="text-sm font-medium text-primary">Entrena tu IA</span>
           </div>
           <h1 className="text-3xl md:text-5xl font-bold mb-4 animate-fade-in-up">
-            Configura tu Perfil de IA
+            Configura tu perfil de IA
           </h1>
           <p className="text-muted-foreground text-base md:text-lg max-w-2xl mx-auto animate-fade-in-up [animation-delay:100ms]">
             Personaliza la IA para que genere contenido perfecto para tu negocio
@@ -238,7 +238,7 @@ export default function EntrenarIAPage() {
         {/* Existing Profiles Section */}
         {existingProfiles.length > 0 && (
           <div className="mb-8 bg-card rounded-xl border shadow-lg p-6 max-w-7xl mx-auto">
-            <h2 className="text-xl font-bold mb-4">Tus Perfiles de IA</h2>
+            <h2 className="text-xl font-bold mb-4">Tus perfiles de IA</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {existingProfiles.map((profile) => {
                 const language = languageOptions.find(l => l.code === profile.language) || languageOptions[0]
@@ -298,7 +298,7 @@ export default function EntrenarIAPage() {
                       }`}
                     >
                       {isCompleted ? (
-                        <CheckCircle2 className="w-6 h-6 animate-scale-in" />
+                        <CheckCircle className="w-6 h-6 animate-scale-in" />
                       ) : (
                         <Icon className={`w-5 h-5 ${isCurrent ? 'animate-bounce-subtle' : ''}`} />
                       )}
@@ -329,7 +329,7 @@ export default function EntrenarIAPage() {
           {/* Main Form */}
           <div className="lg:col-span-2">
             <div className="bg-card rounded-xl border shadow-lg p-6 md:p-8 animate-fade-in-up">
-              {/* Step 1: Tu Negocio */}
+              {/* Step 1: Tu negocio */}
               {step === 1 && (
                 <div className="space-y-6 animate-fade-in">
                   <div className="flex items-start gap-4">
@@ -337,7 +337,7 @@ export default function EntrenarIAPage() {
                       <Building2 className="w-6 h-6" />
                     </div>
                     <div>
-                      <h2 className="text-2xl md:text-3xl font-bold mb-2">Tu Negocio</h2>
+                      <h2 className="text-2xl md:text-3xl font-bold mb-2">Tu negocio</h2>
                       <p className="text-muted-foreground">Cuéntanos sobre tu negocio y ubicación</p>
                     </div>
                   </div>
@@ -778,7 +778,7 @@ export default function EntrenarIAPage() {
                     >
                       {loading && <Loader2 className="w-4 h-4 animate-spin" />}
                       {loading ? "Guardando..." : "Guardar Perfil"}
-                      {!loading && <CheckCircle2 className="w-4 h-4" />}
+                      {!loading && <CheckCircle className="w-4 h-4" />}
                     </Button>
                   </div>
                 </div>

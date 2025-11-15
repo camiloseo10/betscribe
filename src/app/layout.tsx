@@ -6,8 +6,15 @@ import { Toaster } from "@/components/ui/sonner";
 import Script from "next/script";
 
 export const metadata: Metadata = {
-  title: "Quill - Crea Artículos SEO Perfectos con IA",
+  title: "Snapcopy - Crea Artículos SEO Perfectos con IA",
   description: "Genera contenido optimizado para SEO en minutos con Inteligencia Artificial avanzada. Artículos detallados, estructurados y listos para posicionar en Google.",
+  icons: {
+    icon: "/logo-snapcopy.svg",
+  },
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 export default function RootLayout({

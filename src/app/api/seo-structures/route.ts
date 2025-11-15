@@ -1,144 +1,107 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
 import { seoStructures } from '@/db/schema';
-import { eq, like, desc, and } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 export async function GET(request: NextRequest) {
   try {
-    const searchParams = request.nextUrl.searchParams;
+    const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
+    const configId = searchParams.get('configId');
+    const limit = searchParams.get('limit');
 
-    // Single record fetch
     if (id) {
-      if (isNaN(parseInt(id))) {
-        return NextResponse.json({ 
-          error: "ID válido es requerido",
-          code: "INVALID_ID" 
-        }, { status: 400 });
-      }
-
-      const seoStructure = await db.select()
-        .from(seoStructures)
-        .where(eq(seoStructures.id, parseInt(id)))
-        .limit(1);
-
-      if (seoStructure.length === 0) {
-        return NextResponse.json({ 
-          error: 'Estructura SEO no encontrada',
-          code: 'NOT_FOUND' 
-        }, { status: 404 });
-      }
-
-      return NextResponse.json(seoStructure[0], { status: 200 });
+      const idNum = parseInt(id, 10);
+      const rows = await db.select().from(seoStructures).where(eq(seoStructures.id, idNum));
+      return NextResponse.json(rows[0] || null);
     }
 
-    // List with pagination, search, and filters
-    const limit = Math.min(parseInt(searchParams.get('limit') ?? '50'), 100);
-    const offset = parseInt(searchParams.get('offset') ?? '0');
-    const search = searchParams.get('search');
-    const status = searchParams.get('status');
-    const configId = searchParams.get('config_id');
-
-    // Validate status filter
-    if (status && !['generating', 'completed', 'error'].includes(status)) {
-      return NextResponse.json({ 
-        error: "Estado inválido. Valores permitidos: generating, completed, error",
-        code: "INVALID_STATUS" 
-      }, { status: 400 });
+    if (!configId) {
+      const rows = await db.select().from(seoStructures);
+      return NextResponse.json(limit ? rows.slice(0, parseInt(limit, 10)) : rows);
     }
 
-    // Validate configId filter
-    if (configId && isNaN(parseInt(configId))) {
-      return NextResponse.json({ 
-        error: "ID de configuración inválido",
-        code: "INVALID_CONFIG_ID" 
-      }, { status: 400 });
-    }
-
-    let query = db.select().from(seoStructures);
-
-    // Build WHERE conditions
-    const conditions = [];
-
-    if (search) {
-      conditions.push(like(seoStructures.keyword, `%${search}%`));
-    }
-
-    if (status) {
-      conditions.push(eq(seoStructures.status, status));
-    }
-
-    if (configId) {
-      conditions.push(eq(seoStructures.configId, parseInt(configId)));
-    }
-
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions));
-    }
-
-    const results = await query
-      .orderBy(desc(seoStructures.createdAt))
-      .limit(limit)
-      .offset(offset);
-
-    return NextResponse.json(results, { status: 200 });
-
+    const configIdNumber = parseInt(configId, 10);
+    const rows = await db.select().from(seoStructures).where(eq(seoStructures.configId, configIdNumber));
+    return NextResponse.json(limit ? rows.slice(0, parseInt(limit, 10)) : rows);
   } catch (error) {
-    console.error('GET error:', error);
-    return NextResponse.json({ 
-      error: 'Error interno del servidor: ' + (error as Error).message,
-      code: 'INTERNAL_SERVER_ERROR' 
-    }, { status: 500 });
+    console.error('Error fetching SEO structures:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { keyword, configId, websiteUrl, structure, htmlContent, status = 'generating' } = body;
+
+    if (!keyword || !configId || !websiteUrl || !structure) {
+      return NextResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
+
+    const newStructure = await db
+      .insert(seoStructures)
+      .values({
+        keyword,
+        configId: parseInt(configId, 10),
+        websiteUrl,
+        structure,
+        htmlContent: htmlContent || structure,
+        status,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      })
+      .returning();
+
+    return NextResponse.json(newStructure[0]);
+  } catch (error) {
+    console.error('Error creating SEO structure:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }
 
 export async function DELETE(request: NextRequest) {
   try {
-    const searchParams = request.nextUrl.searchParams;
+    const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 
-    if (!id) {
-      return NextResponse.json({ 
-        error: "ID es requerido",
-        code: "MISSING_ID" 
-      }, { status: 400 });
+    if (!id || isNaN(parseInt(id, 10))) {
+      return NextResponse.json(
+        { error: 'ID válido es requerido', code: 'INVALID_ID' },
+        { status: 400 }
+      );
     }
 
-    if (isNaN(parseInt(id))) {
-      return NextResponse.json({ 
-        error: "ID válido es requerido",
-        code: "INVALID_ID" 
-      }, { status: 400 });
-    }
-
-    // Check if record exists
-    const existing = await db.select()
-      .from(seoStructures)
-      .where(eq(seoStructures.id, parseInt(id)))
-      .limit(1);
+    const idNum = parseInt(id, 10);
+    const existing = await db.select().from(seoStructures).where(eq(seoStructures.id, idNum)).limit(1);
 
     if (existing.length === 0) {
-      return NextResponse.json({ 
-        error: 'Estructura SEO no encontrada',
-        code: 'NOT_FOUND' 
-      }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Estructura SEO no encontrada' },
+        { status: 404 }
+      );
     }
 
-    // Delete the record
-    const deleted = await db.delete(seoStructures)
-      .where(eq(seoStructures.id, parseInt(id)))
-      .returning();
+    const deleted = await db.delete(seoStructures).where(eq(seoStructures.id, idNum)).returning();
 
-    return NextResponse.json({
-      message: "SEO structure deleted successfully",
-      seoStructure: deleted[0]
-    }, { status: 200 });
-
+    return NextResponse.json(
+      { message: 'SEO structure deleted successfully', seoStructure: deleted[0] },
+      { status: 200 }
+    );
   } catch (error) {
-    console.error('DELETE error:', error);
-    return NextResponse.json({ 
-      error: 'Error interno del servidor: ' + (error as Error).message,
-      code: 'INTERNAL_SERVER_ERROR' 
-    }, { status: 500 });
+    console.error('Error deleting SEO structure:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }

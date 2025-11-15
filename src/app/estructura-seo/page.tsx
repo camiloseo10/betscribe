@@ -8,23 +8,24 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { toast } from "sonner"
-import {
-  Loader2,
-  Sparkles,
-  Download,
-  Eye,
-  Settings,
-  Trash2,
-  FileText,
-  ExternalLink,
-  RefreshCw,
-  Globe,
-  ListTree,
-  Target,
-  TrendingUp,
-  Layers,
-} from "lucide-react"
+  import { toast } from "sonner"
+  import {
+    Loader2,
+    Sparkles,
+    Download,
+    Eye,
+    Settings,
+    Trash2,
+    FileText,
+    ExternalLink,
+    RefreshCw,
+    Globe,
+    ListTree,
+    Target,
+    TrendingUp,
+    Layers,
+    Copy,
+  } from "lucide-react"
 import { Document, Paragraph, TextRun, Packer, HeadingLevel } from "docx"
 import { saveAs } from "file-saver"
 
@@ -34,6 +35,7 @@ export default function EstructuraSeoPage() {
   const [configurations, setConfigurations] = useState<any[]>([])
   const [selectedConfig, setSelectedConfig] = useState<any>(null)
   const [structuresList, setStructuresList] = useState<any[]>([])
+  const [selectedStructureIds, setSelectedStructureIds] = useState<number[]>([])
   const [loadingList, setLoadingList] = useState(true)
   const [activeTab, setActiveTab] = useState("generate")
 
@@ -224,7 +226,7 @@ export default function EstructuraSeoPage() {
       paragraphs.push(
         new Paragraph({
           children: [
-            new TextRun({ text: "Palabra Clave: ", bold: true }),
+            new TextRun({ text: "Palabra clave: ", bold: true }),
             new TextRun(structure.keyword),
           ],
           spacing: { after: 100 },
@@ -328,6 +330,60 @@ export default function EstructuraSeoPage() {
     }
   }
 
+  const copyStructure = async (structure: any) => {
+    try {
+      let text = ""
+      let htmlOut = ""
+      try {
+        const data = JSON.parse(structure.structure)
+        if (Array.isArray(data?.headings) && data.headings.length > 0) {
+          data.headings.forEach((section: any) => {
+            text += `${section.h2}\n`
+            if (Array.isArray(section.h3)) {
+              section.h3.forEach((h: string) => {
+                text += `${h}\n`
+              })
+            }
+            text += "\n"
+            const h3s = Array.isArray(section.h3)
+              ? section.h3.map((h: string) => `<h3 style=\"color:#000;margin:6px 0;\">${h}</h3>`).join("")
+              : ""
+            htmlOut += `<h2 style=\"color:#000;margin:12px 0 6px 0;\">${section.h2}</h2>${h3s}`
+          })
+        }
+      } catch {}
+      if (!text) {
+        const html = structure.htmlContent || ""
+        const matches = html.match(/<(h[23])[^>]*>([\s\S]*?)<\/h[23]>/gi) || []
+        matches.forEach((m: string) => {
+          const mm = m.match(/<(h[23])[^>]*>([\s\S]*?)<\/h[23]>/i)
+          if (mm) {
+            const level = mm[1].toLowerCase()
+            const t = mm[2].replace(/<[^>]+>/g, "").trim()
+            if (!t) return
+            text += `${t}\n`
+            htmlOut += level === "h2"
+              ? `<h2 style=\"color:#000;margin:12px 0 6px 0;\">${t}</h2>`
+              : `<h3 style=\"color:#000;margin:6px 0;\">${t}</h3>`
+          }
+        })
+      }
+      if (!text) text = structure.keyword || "Estructura SEO"
+      if (navigator.clipboard && 'write' in navigator.clipboard && typeof (window as any).ClipboardItem !== 'undefined') {
+        const item = new (window as any).ClipboardItem({
+          'text/html': new Blob([htmlOut || ''], { type: 'text/html' }),
+          'text/plain': new Blob([text], { type: 'text/plain' }),
+        })
+        await navigator.clipboard.write([item])
+      } else {
+        await navigator.clipboard.writeText(text)
+      }
+      toast.success("Estructura copiada al portapapeles")
+    } catch (e) {
+      toast.error("No se pudo copiar la estructura")
+    }
+  }
+
   const viewStructure = (structure: any) => {
     setGeneratedStructure(structure)
     setStreamedContent(structure.htmlContent)
@@ -367,21 +423,46 @@ export default function EstructuraSeoPage() {
     }
   }
 
+  const toggleSelectStructure = (id: number) => {
+    setSelectedStructureIds((prev) => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
+  }
+
+  const selectAllStructures = () => {
+    if (selectedStructureIds.length === structuresList.length) {
+      setSelectedStructureIds([])
+    } else {
+      setSelectedStructureIds(structuresList.map(s => s.id))
+    }
+  }
+
+  const bulkDeleteStructures = async () => {
+    if (selectedStructureIds.length === 0) return
+    if (!confirm(`¿Eliminar ${selectedStructureIds.length} estructuras seleccionadas?`)) return
+    try {
+      await Promise.all(selectedStructureIds.map(id => fetch(`/api/seo-structures?id=${id}`, { method: 'DELETE' })))
+      toast.success(`Estructuras eliminadas: ${selectedStructureIds.length}`)
+      setSelectedStructureIds([])
+      loadStructuresList()
+    } catch (e) {
+      toast.error('Error al eliminar estructuras seleccionadas')
+    }
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+    <div className="min-h-screen bg-background">
       <Navigation />
 
       <main className="container mx-auto px-4 py-12 pt-24">
         {/* Hero Section */}
         <div className="mb-12 text-center max-w-3xl mx-auto">
-          <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 rounded-full bg-gradient-to-r from-green-500/10 via-emerald-500/10 to-primary/10 border border-primary/20 backdrop-blur-sm">
-            <ListTree className="w-4 h-4 text-green-500 animate-pulse" />
-            <span className="text-sm font-medium bg-gradient-to-r from-green-600 to-emerald-600 dark:from-green-400 dark:to-emerald-400 bg-clip-text text-transparent">
+          <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
+            <ListTree className="w-4 h-4 text-primary animate-pulse" />
+            <span className="text-sm font-medium text-primary">
               Estructuras SEO con IA
             </span>
           </div>
-          <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-foreground via-foreground to-primary bg-clip-text text-transparent">
-            Generador de Estructura SEO
+          <h1 className="text-5xl font-bold mb-4 text-foreground">
+            Generador de estructura SEO
           </h1>
           <p className="text-muted-foreground text-lg leading-relaxed">
             La IA investiga tu palabra clave y genera una estructura de encabezados H2 y H3 
@@ -415,12 +496,12 @@ export default function EstructuraSeoPage() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 h-12 bg-card/50 backdrop-blur-sm border border-border shadow-sm">
-            <TabsTrigger value="generate" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-emerald-500 data-[state=active]:text-white">
-              Generar Nueva
+          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 h-12 bg-card border border-border">
+            <TabsTrigger value="generate" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              Generar nueva
             </TabsTrigger>
-            <TabsTrigger value="list" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-emerald-500 data-[state=active]:text-white">
-              Mis Estructuras ({structuresList.length})
+            <TabsTrigger value="list" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              Mis estructuras ({structuresList.length})
             </TabsTrigger>
           </TabsList>
 
@@ -506,7 +587,7 @@ export default function EstructuraSeoPage() {
                     <div className="p-2 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg">
                       <ListTree className="w-5 h-5 text-white" />
                     </div>
-                    <h2 className="text-xl font-bold">Palabra Clave</h2>
+                    <h2 className="text-xl font-bold">Palabra clave</h2>
                   </div>
 
                   <div className="space-y-2">
@@ -550,7 +631,7 @@ export default function EstructuraSeoPage() {
                   <Button
                     onClick={handleGenerate}
                     disabled={streaming || !selectedConfig}
-                    className="w-full h-12 text-base font-semibold bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 shadow-lg hover:shadow-xl transition-all"
+                    className="w-full h-12 text-base font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
                     size="lg"
                   >
                     {streaming ? (
@@ -570,19 +651,19 @@ export default function EstructuraSeoPage() {
                     ) : (
                       <>
                         <ListTree className="mr-2 h-5 w-5" />
-                        Generar Estructura SEO
+                        Generar estructura SEO
                       </>
                     )}
                   </Button>
 
                   {retrying && (
-                    <div className="p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/20 flex items-start gap-3">
-                      <RefreshCw className="w-5 h-5 text-yellow-600 dark:text-yellow-400 mt-0.5 animate-spin flex-shrink-0" />
+              <div className="p-4 rounded-lg bg-primary/10 border border-primary/20 flex items-start gap-3">
+                      <RefreshCw className="w-5 h-5 text-primary mt-0.5 animate-spin flex-shrink-0" />
                       <div className="text-sm">
-                        <p className="font-medium text-yellow-600 dark:text-yellow-400">
+                        <p className="font-medium text-primary">
                           Reintentando automáticamente
                         </p>
-                        <p className="text-yellow-600/80 dark:text-yellow-400/80 text-xs mt-1">
+                        <p className="text-primary/80 text-xs mt-1">
                           El modelo está sobrecargado. Esperando un momento antes de reintentar...
                         </p>
                       </div>
@@ -598,7 +679,7 @@ export default function EstructuraSeoPage() {
                     <div className="p-2 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg">
                       <Eye className="w-5 h-5 text-white" />
                     </div>
-                    <h2 className="text-xl font-bold">Vista Previa</h2>
+                    <h2 className="text-xl font-bold">Vista previa</h2>
                   </div>
                   {generatedStructure && (
                     <div className="flex gap-2">
@@ -610,6 +691,15 @@ export default function EstructuraSeoPage() {
                         className="hover:bg-primary/10 hover:text-primary hover:border-primary/50"
                       >
                         <Download className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => copyStructure(generatedStructure)}
+                        title="Copiar estructura"
+                        className="hover:bg-primary/10 hover:text-primary hover:border-primary/50"
+                      >
+                        <Copy className="w-4 h-4" />
                       </Button>
                       <Button
                         size="sm"
@@ -642,17 +732,41 @@ export default function EstructuraSeoPage() {
                   </div>
                 )}
 
-                {streamedContent && (
-                  <div className="prose prose-sm max-w-none dark:prose-invert">
-                    <div
-                      className="space-y-4"
-                      dangerouslySetInnerHTML={{ __html: streamedContent }}
-                    />
-                    {streaming && !retrying && (
-                      <span className="inline-block w-2 h-5 bg-primary animate-pulse ml-1 rounded-sm" />
-                    )}
-                  </div>
-                )}
+                {generatedStructure ? (
+                  (() => {
+                    let data: any = null;
+                    try { data = JSON.parse(generatedStructure.structure); } catch {}
+                    const headings = Array.isArray(data?.headings) ? data.headings : [];
+                    if (headings.length === 0) {
+                      return (
+                        <div className="prose prose-sm max-w-none dark:prose-invert">
+                          <div className="space-y-4" dangerouslySetInnerHTML={{ __html: generatedStructure.htmlContent }} />
+                        </div>
+                      );
+                    }
+                    return (
+                      <div className="space-y-6">
+                        {headings.map((section: any, idx: number) => (
+                          <div key={idx} className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 text-primary text-xs font-semibold border border-primary/20">
+                                {idx + 1}
+                              </span>
+                              <div className="text-lg font-semibold">{section.h2}</div>
+                            </div>
+                            {Array.isArray(section.h3) && section.h3.length > 0 && (
+                              <ul className="list-disc pl-6 text-sm text-muted-foreground space-y-1">
+                                {section.h3.map((h: string, i: number) => (
+                                  <li key={i} className="leading-relaxed">{h}</li>
+                                ))}
+                              </ul>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()
+                ) : null}
               </div>
             </div>
           </TabsContent>
@@ -682,6 +796,17 @@ export default function EstructuraSeoPage() {
                 </div>
               ) : (
                 <div className="space-y-4">
+                  <div className="flex items-center justify-between p-3 rounded-lg border border-border bg-card/50">
+                    <div className="flex items-center gap-3">
+                      <input type="checkbox" checked={selectedStructureIds.length === structuresList.length && structuresList.length > 0} onChange={selectAllStructures} />
+                      <span className="text-sm">Seleccionar todo</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" variant="destructive" onClick={bulkDeleteStructures} disabled={selectedStructureIds.length === 0}>
+                        Eliminar seleccionados ({selectedStructureIds.length})
+                      </Button>
+                    </div>
+                  </div>
                   {structuresList.map((item) => (
                     <div
                       key={item.id}
@@ -689,6 +814,7 @@ export default function EstructuraSeoPage() {
                     >
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
+                          <input type="checkbox" checked={selectedStructureIds.includes(item.id)} onChange={() => toggleSelectStructure(item.id)} />
                           <h3 className="font-semibold text-lg">{item.keyword}</h3>
                           <Badge
                             variant={
@@ -729,25 +855,34 @@ export default function EstructuraSeoPage() {
                           variant="outline"
                           onClick={() => viewStructure(item)}
                           title="Ver estructura"
-                          className="hover:bg-blue-500/10 hover:text-blue-600 hover:border-blue-500/50"
+                          className="hover:bg-primary/10 hover:text-primary hover:border-primary/50"
                         >
                           <Eye className="w-4 h-4" />
                         </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => downloadAsWord(item)}
+                        title="Descargar Word"
+                        className="hover:bg-primary/10 hover:text-primary hover:border-primary/50"
+                      >
+                        <Download className="w-4 h-4" />
+                      </Button>
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => downloadAsWord(item)}
-                          title="Descargar Word"
-                          className="hover:bg-green-500/10 hover:text-green-600 hover:border-green-500/50"
+                          onClick={() => copyStructure(item)}
+                          title="Copiar estructura"
+                          className="hover:bg-primary/10 hover:text-primary hover:border-primary/50"
                         >
-                          <Download className="w-4 h-4" />
+                          <Copy className="w-4 h-4" />
                         </Button>
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() => openInGoogleDocs(item)}
                           title="Abrir en Google Docs"
-                          className="hover:bg-orange-500/10 hover:text-orange-600 hover:border-orange-500/50"
+                          className="hover:bg-primary/10 hover:text-primary hover:border-primary/50"
                         >
                           <ExternalLink className="w-4 h-4" />
                         </Button>
