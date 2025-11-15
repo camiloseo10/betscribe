@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+// optional: supabase save disabled in build if client not present
 
 interface TestRequest {
   topic: string;
@@ -226,34 +226,7 @@ export async function POST(request: NextRequest) {
       createdAt: new Date().toISOString()
     };
 
-    // Guardar en Supabase (opcional)
-    try {
-      const { error } = await supabase
-        .from('writing_tests')
-        .insert({
-          topic,
-          keywords,
-          content_type: contentType,
-          target_audience: targetAudience,
-          tone,
-          word_count: testResult.wordCount,
-          language,
-          writing_style: writingStyle,
-          industry,
-          generated_content: generatedContent,
-          seo_score: seoScore,
-          readability_score: readabilityScore,
-          keyword_density: keywordDensity,
-          suggestions,
-          created_at: testResult.createdAt
-        });
-
-      if (error) {
-        console.error('Error al guardar test en Supabase:', error);
-      }
-    } catch (error) {
-      console.error('Error al guardar test:', error);
-    }
+    // Guardado opcional deshabilitado si no existe cliente
 
     return NextResponse.json({
       success: true,
