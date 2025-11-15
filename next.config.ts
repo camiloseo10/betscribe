@@ -16,7 +16,7 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  outputFileTracingRoot: path.resolve(__dirname, '../../'),
+  // Remove custom outputFileTracingRoot to avoid incorrect path resolution on Vercel
   typescript: {
     ignoreBuildErrors: true,
   },
