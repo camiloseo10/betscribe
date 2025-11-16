@@ -119,8 +119,8 @@ export default function GenerarPage() {
   }
 
   const handleGenerateStream = async () => {
-    if (!selectedConfig) {
-      toast.error("Por favor selecciona una configuración primero")
+    if (useClientProfile && !selectedConfig) {
+      toast.error("Selecciona un perfil de cliente o desactiva el uso de perfil")
       return
     }
 
