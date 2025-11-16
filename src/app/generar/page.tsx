@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "sonner"
+import { Switch } from "@/components/ui/switch"
 import {
   Loader2,
   Sparkles,
@@ -35,6 +36,7 @@ export default function GenerarPage() {
   const [retrying, setRetrying] = useState(false)
   const [configurations, setConfigurations] = useState<any[]>([])
   const [selectedConfig, setSelectedConfig] = useState<any>(null)
+  const [useClientProfile, setUseClientProfile] = useState(false)
   const [articles, setArticles] = useState<any[]>([])
   const [selectedArticleIds, setSelectedArticleIds] = useState<number[]>([])
   const [loadingArticles, setLoadingArticles] = useState(true)
@@ -147,7 +149,7 @@ export default function GenerarPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          configId: selectedConfig.id,
+          ...(useClientProfile && selectedConfig ? { configId: selectedConfig.id } : {}),
           title,
           keyword,
           secondaryKeywords: keywords,
@@ -745,12 +747,18 @@ ${article.content}
               <div className="space-y-6">
                 {/* AI Profile Card */}
                 <div className="rounded-2xl border border-border p-6 bg-card">
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="p-2 rounded-lg bg-secondary">
-                      <Settings className="w-5 h-5" />
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2">
+                        <div className="p-2 rounded-lg bg-secondary">
+                          <Settings className="w-5 h-5" />
+                        </div>
+                        <h2 className="text-xl font-bold">Perfil de cliente</h2>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground">Usar perfil</span>
+                        <Switch checked={useClientProfile} onCheckedChange={setUseClientProfile} />
+                      </div>
                     </div>
-                    <h2 className="text-xl font-bold">Perfil de IA</h2>
-                  </div>
 
                   {configurations.length === 0 ? (
                     <div className="text-center py-8">
@@ -768,10 +776,17 @@ ${article.content}
                   ) : (
                     <>
                       <div className="space-y-2 mb-4">
+                        <Badge
+                          variant="secondary"
+                          className={`text-xs ${useClientProfile ? "bg-green-500/10 text-green-600 border-green-500/20" : "bg-red-500/10 text-red-600 border-red-500/20"}`}
+                        >
+                          {useClientProfile ? "Perfil activo" : "Perfil desactivado"}
+                        </Badge>
                         <Label className="text-sm font-medium">Perfil activo</Label>
                         <select
                           className="w-full p-3 rounded-lg border border-border bg-background/50 backdrop-blur-sm hover:border-primary/50 transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
                           value={selectedConfig?.id || ""}
+                          disabled={!useClientProfile}
                           onChange={(e) => {
                             const config = configurations.find(
                               (c) => c.id === parseInt(e.target.value)
@@ -888,13 +903,13 @@ ${article.content}
                       ))}
                     </select>
                     <p className="text-xs text-muted-foreground">
-                      La IA investigará y escribirá el contenido en el idioma seleccionado
+                      Snapbot investigará y escribirá el contenido en el idioma seleccionado
                     </p>
                   </div>
 
                   <Button
                     onClick={handleGenerateStream}
-                    disabled={streaming || !selectedConfig}
+                    disabled={streaming}
                     className="w-full h-12 text-base font-semibold"
                     size="lg"
                   >

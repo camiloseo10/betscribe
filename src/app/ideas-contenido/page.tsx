@@ -28,12 +28,14 @@ import { toast } from "sonner"
   } from "lucide-react"
 import { Document, Paragraph, TextRun, Packer, Table, TableRow, TableCell, WidthType, AlignmentType, HeadingLevel } from "docx"
 import { saveAs } from "file-saver"
+import { Switch } from "@/components/ui/switch"
 
 export default function IdeasContenidoPage() {
   const [streaming, setStreaming] = useState(false)
   const [retrying, setRetrying] = useState(false)
   const [configurations, setConfigurations] = useState<any[]>([])
   const [selectedConfig, setSelectedConfig] = useState<any>(null)
+  const [useClientProfile, setUseClientProfile] = useState(false)
   const [contentIdeasList, setContentIdeasList] = useState<any[]>([])
   const [selectedIdeaIds, setSelectedIdeaIds] = useState<number[]>([])
   const [loadingList, setLoadingList] = useState(true)
@@ -103,8 +105,8 @@ export default function IdeasContenidoPage() {
   }
 
   const handleGenerate = async () => {
-    if (!selectedConfig) {
-      toast.error("Por favor selecciona una configuración primero")
+    if (useClientProfile && !selectedConfig) {
+      toast.error("Selecciona un perfil de cliente o desactiva el uso de perfil")
       return
     }
 
@@ -126,7 +128,7 @@ export default function IdeasContenidoPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          configId: selectedConfig.id,
+          ...(useClientProfile && selectedConfig ? { configId: selectedConfig.id } : {}),
           topic,
           websiteUrl: websiteUrl || undefined,
           language: selectedLanguage,
@@ -462,35 +464,35 @@ export default function IdeasContenidoPage() {
         <div className="mb-12 text-center max-w-3xl mx-auto">
           <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 rounded-full bg-secondary border border-border">
             <Lightbulb className="w-4 h-4 text-primary animate-pulse" />
-            <span className="text-sm font-medium text-foreground">Generador de ideas con IA</span>
+            <span className="text-sm font-medium text-foreground">Generador de ideas con Snapbot</span>
           </div>
           <h1 className="text-5xl font-bold mb-4 text-foreground">
             Ideas de contenido SEO
           </h1>
           <p className="text-muted-foreground text-lg leading-relaxed">
-            La IA investiga tu tema y genera 50 ideas únicas de contenido optimizadas para SEO, 
+             Snapbot investiga tu tema y genera 50 ideas únicas de contenido optimizadas para SEO, 
             basadas en las búsquedas principales de Google.
           </p>
 
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-4 mt-8 max-w-2xl mx-auto">
+            <div className="grid grid-cols-3 gap-4 mt-8 max-w-2xl mx-auto">
             <div className="bg-card border border-border rounded-xl p-4">
               <div className="flex items-center justify-center gap-2 mb-1">
-                <Lightbulb className="w-5 h-5 text-yellow-500" />
-                <span className="text-2xl font-bold text-foreground">50</span>
+                <Lightbulb className="w-5 h-5 text-primary" />
+              <span className="text-2xl font-bold text-foreground">50</span>
               </div>
               <p className="text-xs text-muted-foreground">Ideas únicas</p>
             </div>
             <div className="bg-card border border-border rounded-xl p-4">
               <div className="flex items-center justify-center gap-2 mb-1">
-                <Target className="w-5 h-5 text-green-500" />
+                <Target className="w-5 h-5 text-primary" />
                 <span className="text-2xl font-bold text-foreground">100%</span>
               </div>
               <p className="text-xs text-muted-foreground">SEO optimizado</p>
             </div>
             <div className="bg-card border border-border rounded-xl p-4">
               <div className="flex items-center justify-center gap-2 mb-1">
-                <TrendingUp className="w-5 h-5 text-blue-500" />
+                <TrendingUp className="w-5 h-5 text-primary" />
                 <span className="text-2xl font-bold text-foreground">{contentIdeasList.length}</span>
               </div>
               <p className="text-xs text-muted-foreground">Listas creadas</p>
@@ -513,13 +515,19 @@ export default function IdeasContenidoPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Left: Form */}
               <div className="space-y-6">
-                {/* AI Profile Card */}
+                {/* Client Profile Card */}
                 <div className="rounded-2xl border border-border p-6 bg-card">
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="p-2 rounded-lg bg-secondary">
-                      <Settings className="w-5 h-5" />
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <div className="p-2 rounded-lg bg-secondary">
+                        <Settings className="w-5 h-5" />
+                      </div>
+                      <h2 className="text-xl font-bold">Perfil de cliente</h2>
                     </div>
-                    <h2 className="text-xl font-bold">Perfil de IA</h2>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">Usar perfil</span>
+                      <Switch checked={useClientProfile} onCheckedChange={setUseClientProfile} />
+                    </div>
                   </div>
 
                   {configurations.length === 0 ? (
@@ -537,9 +545,16 @@ export default function IdeasContenidoPage() {
                   ) : (
                     <>
                       <div className="space-y-2 mb-4">
+                        <Badge
+                          variant="secondary"
+                          className={`text-xs ${useClientProfile ? "bg-green-500/10 text-green-600 border-green-500/20" : "bg-red-500/10 text-red-600 border-red-500/20"}`}
+                        >
+                          {useClientProfile ? "Perfil activo" : "Perfil desactivado"}
+                        </Badge>
                         <Label className="text-sm font-medium">Perfil activo</Label>
                         <select
                           className="w-full p-3 rounded-lg border border-border bg-background hover:border-primary/50 transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
+                          disabled={!useClientProfile}
                           value={selectedConfig?.id || ""}
                           onChange={(e) => {
                             const config = configurations.find(
@@ -637,13 +652,13 @@ export default function IdeasContenidoPage() {
                       ))}
                     </select>
                     <p className="text-xs text-muted-foreground">
-                      La IA investigará en este idioma y generará ideas en este idioma
+                      Snapbot investigará en este idioma y generará ideas en este idioma
                     </p>
                   </div>
 
                   <Button
                     onClick={handleGenerate}
-                    disabled={streaming || !selectedConfig}
+                    disabled={streaming}
                     className="w-full h-12 text-base font-semibold"
                     size="lg"
                   >
@@ -670,13 +685,13 @@ export default function IdeasContenidoPage() {
                   </Button>
 
                   {retrying && (
-                    <div className="p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/20 flex items-start gap-3">
-                      <RefreshCw className="w-5 h-5 text-yellow-600 dark:text-yellow-400 mt-0.5 animate-spin flex-shrink-0" />
+                    <div className="p-4 rounded-lg bg-primary/10 border border-primary/20 flex items-start gap-3">
+                      <RefreshCw className="w-5 h-5 text-primary mt-0.5 animate-spin flex-shrink-0" />
                       <div className="text-sm">
-                        <p className="font-medium text-yellow-600 dark:text-yellow-400">
+                        <p className="font-medium text-primary">
                           Reintentando automáticamente
                         </p>
-                        <p className="text-yellow-600/80 dark:text-yellow-400/80 text-xs mt-1">
+                        <p className="text-primary/80 text-xs mt-1">
                           El modelo está sobrecargado. Esperando un momento antes de reintentar...
                         </p>
                       </div>
@@ -692,7 +707,7 @@ export default function IdeasContenidoPage() {
                     <div className="p-2 rounded-lg bg-secondary">
                       <TableIcon className="w-5 h-5" />
                     </div>
-                    <h2 className="text-xl font-bold">Vista Previa</h2>
+                    <h2 className="text-xl font-bold">Vista previa</h2>
                   </div>
                   {generatedIdeas && (
                     <div className="flex gap-2">
@@ -732,7 +747,7 @@ export default function IdeasContenidoPage() {
                   <div className="text-center py-20">
                     <Loader2 className="w-12 h-12 animate-spin mx-auto text-primary mb-4" />
                     <p className="text-lg font-medium">Investigando y generando ideas...</p>
-                    <p className="text-sm text-muted-foreground mt-2">La IA está analizando el tema en {languageOptions.find(l => l.code === selectedLanguage)?.name}</p>
+                    <p className="text-sm text-muted-foreground mt-2">Snapbot está analizando el tema en {languageOptions.find(l => l.code === selectedLanguage)?.name}</p>
                   </div>
                 )}
 
@@ -841,9 +856,9 @@ export default function IdeasContenidoPage() {
                                 ? "destructive"
                                 : "secondary"
                             }
-                            className={
+                          className={
                               item.status === "completed"
-                                ? "bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20"
+                                ? "bg-primary/10 text-primary border-primary/20"
                                 : ""
                             }
                           >
@@ -873,7 +888,7 @@ export default function IdeasContenidoPage() {
                           variant="outline"
                           onClick={() => viewContentIdeas(item)}
                           title="Ver ideas"
-                          className="hover:bg-blue-500/10 hover:text-blue-600 hover:border-blue-500/50"
+                          className="hover:bg-primary/10 hover:text-primary hover:border-primary/50"
                         >
                           <Eye className="w-4 h-4" />
                         </Button>
@@ -882,7 +897,7 @@ export default function IdeasContenidoPage() {
                           variant="outline"
                           onClick={() => downloadAsWord(item)}
                           title="Descargar Word"
-                          className="hover:bg-green-500/10 hover:text-green-600 hover:border-green-500/50"
+                          className="hover:bg-primary/10 hover:text-primary hover:border-primary/50"
                         >
                           <Download className="w-4 h-4" />
                         </Button>
@@ -900,7 +915,7 @@ export default function IdeasContenidoPage() {
                           variant="outline"
                           onClick={() => openInGoogleDocs(item)}
                           title="Abrir en Google Sheets"
-                          className="hover:bg-orange-500/10 hover:text-orange-600 hover:border-orange-500/50"
+                          className="hover:bg-primary/10 hover:text-primary hover:border-primary/50"
                         >
                           <ExternalLink className="w-4 h-4" />
                         </Button>

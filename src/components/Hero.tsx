@@ -76,7 +76,7 @@ export default function Hero() {
               className="text-lg px-8 py-6 focus:ring-2 focus:ring-ring focus:ring-offset-2"
               onClick={() => router.push("/entrenar-ia")}
             >
-              Entrenar tu IA
+              Personalizar tu perfil de cliente
             </Button>
           </motion.div>
 

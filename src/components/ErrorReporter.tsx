@@ -11,7 +11,7 @@ type ReporterProps = {
 export default function ErrorReporter({ error, reset }: ReporterProps) {
   /* ─ instrumentation shared by every route ─ */
   const lastOverlayMsg = useRef("");
-  const pollRef = useRef<NodeJS.Timeout>();
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     const inIframe = window.parent !== window;
@@ -101,10 +101,10 @@ export default function ErrorReporter({ error, reset }: ReporterProps) {
         <div className="max-w-md w-full text-center space-y-6">
           <div className="space-y-2">
             <h1 className="text-2xl font-bold text-destructive">
-              Something went wrong!
+              ¡Algo salió mal!
             </h1>
             <p className="text-muted-foreground">
-              An unexpected error occurred. Please try again fixing with Orchids
+              Se ha producido un error inesperado. Inténtalo de nuevo con Snapcopy.
             </p>
           </div>
           <div className="space-y-2">

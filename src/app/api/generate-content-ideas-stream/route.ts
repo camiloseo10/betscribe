@@ -84,32 +84,16 @@ import { fetchWebsiteContent, fetchSitemapPosts, fetchSitemapDeep } from "@/lib/
       const body = await request.json();
       const { configId, topic, websiteUrl, language = 'es' } = body;
       
-      // Free plan limit
+      // Free plan limit (solo si hay configId)
       const { isFreeLimitReached, freeLimitMessage } = await import("@/lib/limits");
-      if (await isFreeLimitReached("ideas", parseInt(String(configId)))) {
+      if (configId && await isFreeLimitReached("ideas", parseInt(String(configId)))) {
         return new Response(
           encoder.encode(`data: ${JSON.stringify({ type: "error", error: freeLimitMessage("ideas"), code: "FREE_LIMIT_REACHED" })}\n\n`),
           { status: 402, headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive' } }
         );
       }
 
-      if (!configId || isNaN(parseInt(String(configId)))) {
-        return new Response(
-          encoder.encode(`data: ${JSON.stringify({ 
-            type: "error", 
-            error: "El ID de configuración es requerido y debe ser un número válido",
-            code: "INVALID_CONFIG_ID" 
-          })}\n\n`),
-          {
-            status: 400,
-            headers: {
-              "Content-Type": "text/event-stream",
-              "Cache-Control": "no-cache",
-              "Connection": "keep-alive",
-            },
-          }
-        );
-      }
+      // configId opcional
 
       if (!topic || topic.trim() === '') {
         return new Response(
@@ -129,33 +113,12 @@ import { fetchWebsiteContent, fetchSitemapPosts, fetchSitemapDeep } from "@/lib/
         );
       }
 
-      const configExists = await db.select()
-        .from(aiConfigurations)
-        .where(eq(aiConfigurations.id, parseInt(String(configId))))
-        .limit(1);
-
-      if (configExists.length === 0) {
-        return new Response(
-          encoder.encode(`data: ${JSON.stringify({ 
-            type: "error", 
-            error: "La configuración especificada no existe",
-            code: "CONFIG_NOT_FOUND" 
-          })}\n\n`),
-          {
-            status: 404,
-            headers: {
-              "Content-Type": "text/event-stream",
-              "Cache-Control": "no-cache",
-              "Connection": "keep-alive",
-            },
-          }
-        );
-      }
+      // Si se envía configId y no existe, continuamos con generación genérica
 
       const now = new Date().toISOString();
       const newContentIdea = await db.insert(contentIdeas)
         .values({
-          configId: parseInt(String(configId)),
+          ...(configId && !isNaN(parseInt(String(configId))) ? { configId: parseInt(String(configId)) } : {}),
           topic: topic.trim(),
           websiteUrl: websiteUrl || null,
           language,

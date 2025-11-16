@@ -6,7 +6,7 @@ import { CheckCircle, Eye, Sparkles, Zap, Target } from "lucide-react"
 
 export default function HomeSections() {
   const steps = [
-    { title: "Elige tu perfil de IA", desc: "Usa tu configuración entrenada para adaptar el contenido a tu negocio" },
+    { title: "Elige tu perfil de cliente", desc: "Usa tu configuración entrenada para adaptar el contenido a tu negocio" },
     { title: "Ingresa tu palabra clave", desc: "Define el tema y deja que la IA investigue y estructure" },
     { title: "Genera y exporta", desc: "Descarga en Word o copia para WordPress y publica" },
   ]

@@ -88,7 +88,7 @@ export default function AIWritingTrainer() {
         <div className="flex justify-center">
           <Brain className="h-12 w-12 text-purple-600" />
         </div>
-        <h1 className="text-3xl font-bold text-gray-900">Entrenar IA de Escritura</h1>
+        <h1 className="text-3xl font-bold text-gray-900">Entrenando snapbot de escritura</h1>
         <p className="text-gray-600">
           Mejora la calidad de los artículos generados entrenando la IA con tus propios ejemplos de escritura.
         </p>
@@ -180,7 +180,7 @@ export default function AIWritingTrainer() {
             {isTraining ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Entrenando IA...
+                Entrenando snapbot...
               </>
             ) : (
               <>

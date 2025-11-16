@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-  import { toast } from "sonner"
+import { toast } from "sonner"
+import { Switch } from "@/components/ui/switch"
   import {
     Loader2,
     Sparkles,
@@ -102,9 +103,11 @@ export default function EstructuraSeoPage() {
     }
   }
 
+  const [useClientProfile, setUseClientProfile] = useState(false)
+
   const handleGenerate = async () => {
-    if (!selectedConfig) {
-      toast.error("Por favor selecciona una configuración primero")
+    if (useClientProfile && !selectedConfig) {
+      toast.error("Selecciona un perfil de cliente o desactiva el uso de perfil")
       return
     }
 
@@ -127,7 +130,7 @@ export default function EstructuraSeoPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          configId: selectedConfig.id,
+          ...(useClientProfile && selectedConfig ? { configId: selectedConfig.id } : {}),
           keyword,
           language: selectedLanguage,
         }),
@@ -465,7 +468,7 @@ export default function EstructuraSeoPage() {
             Generador de estructura SEO
           </h1>
           <p className="text-muted-foreground text-lg leading-relaxed">
-            La IA investiga tu palabra clave y genera una estructura de encabezados H2 y H3 
+            Snapbot investiga tu palabra clave y genera una estructura de encabezados H2 y H3 
             optimizada para SEO, lista para descargar en Word o Google Docs.
           </p>
 
@@ -512,11 +515,17 @@ export default function EstructuraSeoPage() {
               <div className="space-y-6">
                 {/* AI Profile Card */}
                 <div className="bg-gradient-to-br from-green-500/10 via-emerald-500/5 to-transparent rounded-2xl border border-green-500/20 p-6 shadow-lg backdrop-blur-sm">
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg">
-                      <Settings className="w-5 h-5 text-white" />
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <div className="p-2 rounded-lg bg-secondary">
+                        <Settings className="w-5 h-5" />
+                      </div>
+                      <h2 className="text-xl font-bold">Perfil de cliente</h2>
                     </div>
-                    <h2 className="text-xl font-bold">Perfil de IA</h2>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">Usar perfil</span>
+                      <Switch checked={useClientProfile} onCheckedChange={setUseClientProfile} />
+                    </div>
                   </div>
 
                   {configurations.length === 0 ? (
@@ -537,10 +546,17 @@ export default function EstructuraSeoPage() {
                   ) : (
                     <>
                       <div className="space-y-2 mb-4">
+                        <Badge
+                          variant="secondary"
+                          className={`text-xs ${useClientProfile ? "bg-green-500/10 text-green-600 border-green-500/20" : "bg-red-500/10 text-red-600 border-red-500/20"}`}
+                        >
+                          {useClientProfile ? "Perfil activo" : "Perfil desactivado"}
+                        </Badge>
                         <Label className="text-sm font-medium">Perfil activo</Label>
                         <select
                           className="w-full p-3 rounded-lg border border-border bg-background/50 backdrop-blur-sm hover:border-primary/50 transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
                           value={selectedConfig?.id || ""}
+                          disabled={!useClientProfile}
                           onChange={(e) => {
                             const config = configurations.find(
                               (c) => c.id === parseInt(e.target.value)
@@ -602,7 +618,7 @@ export default function EstructuraSeoPage() {
                       className="h-11 bg-background/50 border-border hover:border-primary/50 focus:border-primary transition-colors"
                     />
                     <p className="text-xs text-muted-foreground">
-                      La IA investigará esta palabra clave y creará una estructura H2/H3 optimizada
+                     Snapbot investigará esta palabra clave y creará una estructura H2/H3 optimizada
                     </p>
                   </div>
 
@@ -624,13 +640,13 @@ export default function EstructuraSeoPage() {
                       ))}
                     </select>
                     <p className="text-xs text-muted-foreground">
-                      La IA investigará y generará la estructura en este idioma
+                      Snapbot investigará y generará la estructura en este idioma
                     </p>
                   </div>
 
                   <Button
                     onClick={handleGenerate}
-                    disabled={streaming || !selectedConfig}
+                    disabled={streaming}
                     className="w-full h-12 text-base font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
                     size="lg"
                   >

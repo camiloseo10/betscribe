@@ -12,6 +12,8 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import { Loader2, Sparkles, CheckCircle, ArrowRight, ArrowLeft, Building2, Users, Heart, Settings, Eye, Trash2, Globe } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { ScrollArea } from "@/components/ui/scroll-area"
 
 export default function EntrenarIAPage() {
   const router = useRouter()
@@ -19,6 +21,9 @@ export default function EntrenarIAPage() {
   const [step, setStep] = useState(1)
   const [existingProfiles, setExistingProfiles] = useState<any[]>([])
   const [loadingProfiles, setLoadingProfiles] = useState(true)
+  const [manageOpen, setManageOpen] = useState(false)
+  const [selectedProfileIds, setSelectedProfileIds] = useState<number[]>([])
+  const [bulkDeleting, setBulkDeleting] = useState(false)
 
   // Form state
   const [formData, setFormData] = useState({
@@ -101,7 +106,7 @@ export default function EntrenarIAPage() {
   }
 
   const deleteProfile = async (id: number) => {
-    if (!confirm("¿Estás seguro de que quieres eliminar este perfil de IA?")) {
+    if (!confirm("¿Estás seguro de que quieres eliminar este perfil de cliente?")) {
       return
     }
 
@@ -119,6 +124,34 @@ export default function EntrenarIAPage() {
     } catch (error) {
       console.error("Error deleting profile:", error)
       toast.error("Error al eliminar el perfil")
+    }
+  }
+
+  const toggleSelectProfile = (id: number) => {
+    setSelectedProfileIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
+  }
+
+  const selectAllProfiles = () => {
+    if (selectedProfileIds.length === existingProfiles.length) {
+      setSelectedProfileIds([])
+    } else {
+      setSelectedProfileIds(existingProfiles.map(p => p.id))
+    }
+  }
+
+  const bulkDeleteProfiles = async () => {
+    if (selectedProfileIds.length === 0) return
+    if (!confirm(`¿Eliminar ${selectedProfileIds.length} perfiles seleccionados?`)) return
+    try {
+      setBulkDeleting(true)
+      await Promise.all(selectedProfileIds.map(id => fetch(`/api/configurations?id=${id}`, { method: 'DELETE' })))
+      toast.success(`Perfiles eliminados: ${selectedProfileIds.length}`)
+      setSelectedProfileIds([])
+      await loadExistingProfiles()
+    } catch (e) {
+      toast.error('Error al eliminar perfiles seleccionados')
+    } finally {
+      setBulkDeleting(false)
     }
   }
 
@@ -228,7 +261,7 @@ export default function EntrenarIAPage() {
             <span className="text-sm font-medium text-primary">Entrena tu IA</span>
           </div>
           <h1 className="text-3xl md:text-5xl font-bold mb-4 animate-fade-in-up">
-            Configura tu perfil de IA
+            Configura tu perfil de cliente
           </h1>
           <p className="text-muted-foreground text-base md:text-lg max-w-2xl mx-auto animate-fade-in-up [animation-delay:100ms]">
             Personaliza la IA para que genere contenido perfecto para tu negocio
@@ -238,9 +271,59 @@ export default function EntrenarIAPage() {
         {/* Existing Profiles Section */}
         {existingProfiles.length > 0 && (
           <div className="mb-8 bg-card rounded-xl border shadow-lg p-6 max-w-7xl mx-auto">
-            <h2 className="text-xl font-bold mb-4">Tus perfiles de IA</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold">Tus perfiles de IA</h2>
+              <Dialog open={manageOpen} onOpenChange={setManageOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="gap-2">
+                    Ver todos tus perfiles
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>Administrar perfiles</DialogTitle>
+                  </DialogHeader>
+                  <div className="flex items-center justify-between p-3 rounded-lg border bg-card/50">
+                    <div className="flex items-center gap-3">
+                      <input type="checkbox" checked={selectedProfileIds.length === existingProfiles.length && existingProfiles.length > 0} onChange={selectAllProfiles} />
+                      <span className="text-sm">Seleccionar todo</span>
+                    </div>
+                    <Button size="sm" variant="destructive" onClick={bulkDeleteProfiles} disabled={selectedProfileIds.length === 0 || bulkDeleting}>
+                      {bulkDeleting ? 'Eliminando...' : `Eliminar seleccionados (${selectedProfileIds.length})`}
+                    </Button>
+                  </div>
+                  <ScrollArea className="max-h-[50vh] mt-4">
+                    <div className="space-y-3">
+                      {existingProfiles.map((profile) => {
+                        const language = languageOptions.find(l => l.code === profile.language) || languageOptions[0]
+                        const checked = selectedProfileIds.includes(profile.id)
+                        return (
+                          <div key={profile.id} className="flex items-start justify-between p-4 rounded-lg border bg-card">
+                            <div className="flex items-start gap-3">
+                              <input type="checkbox" checked={checked} onChange={() => toggleSelectProfile(profile.id)} />
+                              <div>
+                                <h3 className="font-semibold">{profile.name}</h3>
+                                <p className="text-sm text-muted-foreground">{profile.businessName}</p>
+                                <div className="flex items-center gap-2 mt-2">
+                                  <Badge variant="secondary" className="text-xs">{profile.wordCount} palabras</Badge>
+                                  <Badge variant="secondary" className="text-xs">{language.flag} {language.name}</Badge>
+                                  {profile.isDefault && <Badge className="text-xs">Por defecto</Badge>}
+                                </div>
+                              </div>
+                            </div>
+                            <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => deleteProfile(profile.id)}>
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </ScrollArea>
+                </DialogContent>
+              </Dialog>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {existingProfiles.map((profile) => {
+              {existingProfiles.slice(0, 3).map((profile) => {
                 const language = languageOptions.find(l => l.code === profile.language) || languageOptions[0]
                 return (
                   <div

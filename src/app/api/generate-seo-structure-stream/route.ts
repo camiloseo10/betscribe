@@ -83,30 +83,14 @@ export async function POST(request: NextRequest) {
     const { configId, keyword, websiteUrl, language = 'es' } = body;
 
     const { isFreeLimitReached, freeLimitMessage } = await import("@/lib/limits");
-    if (await isFreeLimitReached("structures", parseInt(String(configId)))) {
+    if (configId && await isFreeLimitReached("structures", parseInt(String(configId)))) {
       return new Response(
         encoder.encode(`data: ${JSON.stringify({ type: "error", error: freeLimitMessage("structures"), code: "FREE_LIMIT_REACHED" })}\n\n`),
         { status: 402, headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive' } }
       );
     }
 
-    if (!configId || isNaN(parseInt(String(configId)))) {
-      return new Response(
-        encoder.encode(`data: ${JSON.stringify({ 
-          type: "error", 
-          error: "ID de configuración válido es requerido",
-          code: "INVALID_CONFIG_ID" 
-        })}\n\n`),
-        {
-          status: 400,
-          headers: {
-            'Content-Type': 'text/event-stream',
-            'Cache-Control': 'no-cache',
-            'Connection': 'keep-alive',
-          },
-        }
-      );
-    }
+    // configId opcional
 
     if (!keyword || typeof keyword !== 'string' || keyword.trim() === '') {
       return new Response(
@@ -126,34 +110,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const config = await db.select()
-      .from(aiConfigurations)
-      .where(eq(aiConfigurations.id, parseInt(String(configId))))
-      .limit(1);
+    // Si se envía configId y no existe, continuamos con generación genérica
 
-    if (config.length === 0) {
+    const now = new Date().toISOString();
+    const dbUrl = (process.env.SNAPIK_DB_URL || process.env.DATABASE_URL || process.env.TURSO_CONNECTION_URL || '').trim();
+    const dbToken = (process.env.SNAPIK_DB_TOKEN || process.env.DATABASE_TOKEN || process.env.TURSO_AUTH_TOKEN || '').trim();
+    if (!dbUrl || dbUrl === 'undefined' || dbUrl === 'null' || !dbToken || dbToken === 'undefined' || dbToken === 'null') {
+      const friendlyError = formatApiError({ status: 500, message: 'DB configuration missing or invalid. Please set SNAPIK_DB_URL/SNAPIK_DB_TOKEN (or TURSO_*).'});
       return new Response(
-        encoder.encode(`data: ${JSON.stringify({ 
-          type: "error", 
-          error: "Configuración de IA no encontrada",
-          code: "CONFIG_NOT_FOUND" 
-        })}\n\n`),
-        {
-          status: 404,
-          headers: {
-            'Content-Type': 'text/event-stream',
-            'Cache-Control': 'no-cache',
-            'Connection': 'keep-alive',
-          },
-        }
+        encoder.encode(`data: ${JSON.stringify({ type: "error", error: friendlyError })}\n\n`),
+        { status: 200, headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive' } }
       );
     }
 
-    const now = new Date().toISOString();
-    const rawClient = createClient({
-      url: process.env.TURSO_CONNECTION_URL!,
-      authToken: process.env.TURSO_AUTH_TOKEN!,
-    });
+    const rawClient = createClient({ url: dbUrl, authToken: dbToken });
 
     const insertSql = `
       INSERT INTO seo_structures (
@@ -162,7 +132,7 @@ export async function POST(request: NextRequest) {
     `;
 
     const insertArgs = [
-      parseInt(String(configId), 10),
+      (configId && !isNaN(parseInt(String(configId), 10)) ? parseInt(String(configId), 10) : null),
       keyword.trim(),
       language || 'es',
       '{}',

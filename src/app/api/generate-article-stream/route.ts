@@ -91,10 +91,10 @@ export async function POST(req: NextRequest) {
     const body = (await req.json()) as GenerateArticleStreamRequest;
     const { configId, keyword, secondaryKeywords, title, language } = body;
 
-    // Validate required fields
-    if (!configId || !keyword || !title) {
+    // Validate required fields (configId opcional)
+    if (!keyword || !title) {
       return new Response(
-        JSON.stringify({ error: "configId, keyword y title son requeridos" }),
+        JSON.stringify({ error: "keyword y title son requeridos" }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
@@ -106,22 +106,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Fetch configuration
-    const config = await db
-      .select()
-      .from(aiConfigurations)
-      .where(eq(aiConfigurations.id, configId))
-      .limit(1);
-
-    if (config.length === 0) {
-      return new Response(
-        JSON.stringify({ error: "Configuración no encontrada" }),
-        { status: 404, headers: { "Content-Type": "application/json" } }
-      );
+    // Fetch configuration si se proporcionó
+    let config: any[] = [];
+    if (configId && !isNaN(configId)) {
+      config = await db
+        .select()
+        .from(aiConfigurations)
+        .where(eq(aiConfigurations.id, configId))
+        .limit(1);
     }
 
-    // Free plan limit check
-    if (await isFreeLimitReached("articles", configId)) {
+    // Free plan limit check (solo si hay configId)
+    if (configId && await isFreeLimitReached("articles", configId)) {
       return new Response(JSON.stringify({ error: freeLimitMessage("articles"), code: "FREE_LIMIT_REACHED" }), { status: 402, headers: { "Content-Type": "application/json" } });
     }
 
@@ -130,7 +126,7 @@ export async function POST(req: NextRequest) {
     const newArticle = await db
       .insert(articles)
       .values({
-        configId,
+        ...(configId ? { configId } : {}),
         title,
         keyword,
         secondaryKeywords: JSON.stringify(secondaryKeywords),
@@ -146,8 +142,23 @@ export async function POST(req: NextRequest) {
 
     const articleId = newArticle[0].id;
 
-    // Build prompt with selected language (override config language if provided)
-    const prompt = buildArticlePrompt(config[0], keyword, secondaryKeywords, language);
+    // Build prompt con fallback por defecto
+    const defaultConfig = {
+      businessName: "Snapcopy",
+      businessType: "contenidos",
+      location: "global",
+      expertise: "redactor SEO",
+      targetAudience: JSON.stringify(["lectores", "clientes potenciales"]),
+      mainService: "creación de artículos",
+      brandPersonality: JSON.stringify(["cercano", "claro", "útil"]),
+      uniqueValue: "explicaciones prácticas y ejemplos reales",
+      tone: JSON.stringify(["conversacional", "natural"]),
+      desiredAction: "contactar",
+      wordCount: 3000,
+      localKnowledge: null,
+      language: language || "es",
+    };
+    const prompt = buildArticlePrompt((config[0] || defaultConfig), keyword, secondaryKeywords, language);
 
     // Create readable stream for streaming response
     const stream = new ReadableStream({

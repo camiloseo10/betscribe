@@ -19,43 +19,43 @@ const languageInstructions: { [key: string]: { name: string; researchPrompt: str
     name: "Español de España",
     researchPrompt: "Investiga exhaustivamente sobre el tema en español de España. Analiza tendencias actuales, datos relevantes, y mejores prácticas en el mercado español y europeo. Usa vocabulario y expresiones propias de España.",
     contentPrompt: "Escribe en español de España de forma clara y profesional, usando el vocabulario y expresiones propias de España (ordenador en lugar de computadora, móvil en lugar de celular, etc.)",
-    naturalWritingPrompt: "Además, escribe de forma natural y conversacional como si hablaras con un amigo. Conecta los párrafos con continuidad y coherencia usando, cuando tenga sentido, referencias suaves como 'como vimos antes', 'más adelante lo veremos', 'como pudiste observar en este artículo'. Úsalas de forma ocasional y nunca de manera forzada o repetitiva. Puedes incluir una línea humana breve si encaja, pero prioriza el cierre orientado a la acción."
+    naturalWritingPrompt: "Además, escribe de forma natural y conversacional como si hablaras con un amigo. Conecta los párrafos con continuidad y coherencia usando, cuando tenga sentido, referencias suaves como 'como vimos antes', 'más adelante lo veremos', 'como pudiste observar en este artículo'. Úsalas de forma ocasional y nunca de manera forzada o repetitiva. Puedes incluir una línea humana breve si encaja, pero prioriza el cierre orientado a la acción. No comiences el artículo con 'Imagina', 'Imagínate', 'Piensa'; usa una frase informativa y natural relacionada con la palabra clave. Si hay perfil de cliente, úsalo estrictamente para tono, audiencia, personalidad de marca y objetivo."
   },
   es: {
     name: "Español Neutro",
     researchPrompt: "Investiga exhaustivamente sobre el tema en español neutro. Analiza tendencias actuales, datos relevantes, y mejores prácticas en el mercado hispanohablante global. Usa vocabulario universal comprensible en todos los países hispanohablantes.",
     contentPrompt: "Escribe en español neutro de forma clara y profesional, evitando regionalismos y usando vocabulario comprensible en todos los países hispanohablantes",
-    naturalWritingPrompt: "Además, mantén un tono conversacional y natural. Conecta los párrafos con continuidad y coherencia usando, cuando corresponda, referencias suaves como 'como vimos antes', 'más adelante lo veremos', 'como pudiste observar en este artículo'. Úsalas de forma ocasional, nunca de manera forzada o repetitiva. Puedes añadir una línea humana breve si encaja, priorizando el cierre orientado a la acción."
+    naturalWritingPrompt: "Además, mantén un tono conversacional y natural. Conecta los párrafos con continuidad y coherencia usando, cuando corresponda, referencias suaves como 'como vimos antes', 'más adelante lo veremos', 'como pudiste observar en este artículo'. Úsalas de forma ocasional, nunca de manera forzada o repetitiva. Puedes añadir una línea humana breve si encaja, priorizando el cierre orientado a la acción. No comiences el artículo con 'Imagina', 'Imagínate', 'Piensa'; usa una frase informativa y natural relacionada con la palabra clave. Si hay perfil de cliente, úsalo estrictamente para tono, audiencia, personalidad de marca y objetivo."
   },
   "en-us": {
     name: "American English",
     researchPrompt: "Research thoroughly about the topic in American English. Analyze current trends, relevant data, and best practices in the US market. Use American vocabulary, spelling, and expressions.",
     contentPrompt: "Write in clear and professional American English, using American spelling (color not colour, analyze not analyse) and expressions",
-    naturalWritingPrompt: "Also, write in a conversational, natural tone. Connect paragraphs with continuity using occasional natural references like 'as we saw earlier', 'we’ll look at this in more detail later', 'as you may have noticed in this article'. Use them sparingly and never in a forced or repetitive way. You may add a brief human line if it fits, but prioritize an action-oriented closing."
+    naturalWritingPrompt: "Also, write in a conversational, natural tone. Connect paragraphs with continuity using occasional natural references like 'as we saw earlier', 'we’ll look at this in more detail later', 'as you may have noticed in this article'. Use them sparingly and never in a forced or repetitive way. You may add a brief human line if it fits, but prioritize an action-oriented closing. Do not start the article with 'Imagine', 'Picture this', or 'Think'; begin with a natural, informative sentence tied to the keyword. If a client profile is provided, use it strictly for tone, audience, brand personality, and goal."
   },
   fr: {
     name: "Français",
     researchPrompt: "Recherchez minutieusement le sujet en français. Analysez les tendances actuelles, les données pertinentes et les meilleures pratiques dans les marchés francophones.",
     contentPrompt: "Écrivez en français de manière claire et professionnelle",
-    naturalWritingPrompt: "Écrivez également de manière naturelle et conversationnelle. Reliez les paragraphes avec continuité en utilisant, lorsque cela a du sens, des références douces comme 'comme nous l’avons vu plus haut', 'nous y reviendrons plus en détail', 'comme vous avez pu le constater dans cet article'. Utilisez-les avec parcimonie, jamais de façon forcée ou répétitive. Vous pouvez ajouter une brève touche humaine si elle s’y prête, mais privilégiez une conclusion orientée vers l’action."
+    naturalWritingPrompt: "Écrivez également de manière naturelle et conversationnelle. Reliez les paragraphes avec continuité en utilisant, lorsque cela a du sens, des références douces comme 'comme nous l’avons vu plus haut', 'nous y reviendrons plus en détail', 'comme vous avez pu le constater dans cet article'. Utilisez-les avec parcimonie, jamais de façon forcée ou répétitive. Vous pouvez ajouter une brève touche humaine si elle s’y prête, mais privilégiez une conclusion orientée vers l’action. N’ouvrez pas l’article avec 'Imaginez', 'Pensez'; commencez par une phrase informative et naturelle liée au mot-clé. Si un profil client est fourni, utilisez‑le strictement pour le ton, l’audience, la personnalité de marque et l’objectif."
   },
   de: {
     name: "Deutsch",
     researchPrompt: "Recherchieren Sie das Thema gründlich auf Deutsch. Analysieren Sie aktuelle Trends, relevante Daten und Best Practices in deutschsprachigen Märkten.",
     contentPrompt: "Schreiben Sie in klarem und professionellem Deutsch",
-    naturalWritingPrompt: "Schreiben Sie auch in einem natürlichen, gesprächigen Ton. Verbinden Sie Absätze kontinuierlich und stimmig, und verwenden Sie gelegentlich natürliche Verweise wie 'wie wir zuvor gesehen haben', 'darauf gehen wir später genauer ein', 'wie du in diesem Artikel bereits gesehen hast'. Setzen Sie sie sparsam ein, nie erzwungen oder repetitiv. Eine kurze menschliche Zeile ist möglich, wenn sie natürlich passt, doch der Abschluss sollte handlungsorientiert sein."
+    naturalWritingPrompt: "Schreiben Sie auch in einem natürlichen, gesprächigen Ton. Verbinden Sie Absätze kontinuierlich und stimmig, und verwenden Sie gelegentlich natürliche Verweise wie 'wie wir zuvor gesehen haben', 'darauf gehen wir später genauer ein', 'wie du in diesem Artikel bereits gesehen hast'. Setzen Sie sie sparsam ein, nie erzwungen oder repetitiv. Eine kurze menschliche Zeile ist möglich, wenn sie natürlich passt, doch der Abschluss sollte handlungsorientiert sein. Beginne den Artikel nicht mit 'Stell dir vor', 'Denke'; starte mit einem natürlichen, informativen Satz zur Schlüsselphrase. Wenn ein Kundenprofil vorhanden ist, nutze es strikt für Ton, Zielgruppe, Markenpersönlichkeit und Ziel."
   },
   it: {
     name: "Italiano",
     researchPrompt: "Ricerca approfondita sull'argomento in italiano. Analizza le tendenze attuali, i dati rilevanti e le migliori pratiche nei mercati italofoni.",
     contentPrompt: "Scrivi in italiano chiaro e professionale",
-    naturalWritingPrompt: "Scrivi anche in modo naturale e conversazionale. Collega i paragrafi con continuità e coerenza usando, quando ha senso, riferimenti morbidi come 'come abbiamo visto prima', 'lo vedremo più nel dettaglio più avanti', 'come hai potuto notare in questo articolo'. Usali saltuariamente e mai in modo forzato o ripetitivo. Puoi aggiungere una breve nota umana se serve, ma privilegia una chiusura orientata all’azione."
+    naturalWritingPrompt: "Scrivi anche in modo naturale e conversazionale. Collega i paragrafi con continuità e coerenza usando, quando ha senso, riferimenti morbidi come 'come abbiamo visto prima', 'lo vedremo più nel dettaglio più avanti', 'come hai potuto notare in questo articolo'. Usali saltuariamente e mai in modo forzato o ripetitivo. Puoi aggiungere una breve nota umana se serve, ma privilegia una chiusura orientata all’azione. Non iniziare l’articolo con 'Immagina', 'Pensa'; comincia con una frase informativa e naturale legata alla parola chiave. Se è disponibile un profilo cliente, usalo rigorosamente per tono, pubblico, personalità del brand e obiettivo."
   },
   pt: {
     name: "Português",
     researchPrompt: "Pesquise exaustivamente sobre o tema em português. Analise tendências atuais, dados relevantes e melhores práticas nos mercados lusófonos.",
     contentPrompt: "Escreva em português claro e profissional",
-    naturalWritingPrompt: "Escreva também de forma natural e conversacional. Conecte os parágrafos com continuidade e coerência usando, quando fizer sentido, referências suaves como 'como vimos antes', 'veremos isso com mais detalhes mais adiante', 'como você pôde perceber neste artigo'. Use-as ocasionalmente e nunca de forma forçada ou repetitiva. Você pode incluir uma linha humana breve se couber, mas priorize o fechamento orientado à ação."
+    naturalWritingPrompt: "Escreva também de forma natural e conversacional. Conecte os parágrafos com continuidade e coerência usando, quando fizer sentido, referências suaves como 'como vimos antes', 'veremos isso com mais detalhes mais adiante', 'como você pôde perceber neste artigo'. Use-as ocasionalmente e nunca de forma forçada ou repetitiva. Você pode incluir uma linha humana breve se couber, mas priorize o fechamento orientado à ação. Não comece o artigo com 'Imagine', 'Pense'; inicie com uma frase informativa e natural relacionada à palavra‑chave. Se houver um perfil do cliente, use‑o estritamente para tom, público, personalidade da marca e objetivo."
   }
 };
 
@@ -135,6 +135,7 @@ Evita absolutamente estas palabras y frases cliché salvo que sean absolutamente
 **Importante: Todo el contenido debe ser escrito completamente en ${langInstructions.name}**
 
 **PROCESO DE INVESTIGACIÓN Y CREACIÓN:**
+• Si se proporcionó un perfil de cliente (configuración), ÚSALO estrictamente para el tono, la audiencia, la personalidad de marca y el objetivo.
 1. **Investigación preliminar obligatoria:**
    - ${langInstructions.researchPrompt}
    - Identifica las preguntas más frecuentes de los usuarios sobre este tema
@@ -159,6 +160,7 @@ Evita absolutamente estas palabras y frases cliché salvo que sean absolutamente
 
 **ESTRUCTURA REQUERIDA:**
 - Introducción impactante con el problema/necesidad del lector (SIN presentarte como instructor o experto)
+  - Nunca empieces con "Imagina", "Imagínate", "Piensa" o fórmulas similares; usa una frase informativa y natural relacionada con la palabra clave
 - Subtítulos optimizados (H2, H3) con palabras clave
 - Contenido detallado con ejemplos prácticos y datos relevantes de tu investigación
 - **Tablas cuando sea apropiado** (comparaciones, características, precios, pros/contras, especificaciones, cronogramas, etc.)

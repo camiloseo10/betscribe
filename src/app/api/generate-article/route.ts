@@ -7,7 +7,7 @@ import { eq } from "drizzle-orm";
 import { isFreeLimitReached, freeLimitMessage } from "@/lib/limits";
 
 interface GenerateArticleRequest {
-  configId: number;
+  configId?: number;
   keyword: string;
   secondaryKeywords: string[];
   title: string;
@@ -40,10 +40,10 @@ export async function POST(req: NextRequest) {
     const body = (await req.json()) as GenerateArticleRequest;
     const { configId, keyword, secondaryKeywords, title } = body;
 
-    // Validate required fields
-    if (!configId || !keyword || !title) {
+    // Validate required fields (configId opcional)
+    if (!keyword || !title) {
       return NextResponse.json(
-        { error: "configId, keyword y title son requeridos" },
+        { error: "keyword y title son requeridos" },
         { status: 400 }
       );
     }
@@ -55,22 +55,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Fetch configuration
-    const config = await db
-      .select()
-      .from(aiConfigurations)
-      .where(eq(aiConfigurations.id, configId))
-      .limit(1);
-
-    if (config.length === 0) {
-      return NextResponse.json(
-        { error: "Configuración no encontrada" },
-        { status: 404 }
-      );
+    // Fetch configuration si se proporcionó
+    let config: any[] = [];
+    if (configId && !isNaN(configId)) {
+      config = await db
+        .select()
+        .from(aiConfigurations)
+        .where(eq(aiConfigurations.id, configId))
+        .limit(1);
     }
 
-    // Free plan limit check
-    if (await isFreeLimitReached("articles", configId)) {
+    // Free plan limit check (solo si hay configId)
+    if (configId && await isFreeLimitReached("articles", configId)) {
       return NextResponse.json({ error: freeLimitMessage("articles"), code: "FREE_LIMIT_REACHED" }, { status: 402 });
     }
 
@@ -79,7 +75,7 @@ export async function POST(req: NextRequest) {
     const newArticle = await db
       .insert(articles)
       .values({
-        configId,
+        ...(configId ? { configId } : {}),
         title,
         keyword,
         secondaryKeywords: JSON.stringify(secondaryKeywords),
@@ -96,7 +92,22 @@ export async function POST(req: NextRequest) {
     const articleId = newArticle[0].id;
 
     // Build prompt
-    const prompt = buildArticlePrompt(config[0], keyword, secondaryKeywords);
+    const defaultConfig = {
+      businessName: "Snapcopy",
+      businessType: "contenidos",
+      location: "global",
+      expertise: "redactor SEO",
+      targetAudience: JSON.stringify(["lectores", "clientes potenciales"]),
+      mainService: "creación de artículos",
+      brandPersonality: JSON.stringify(["cercano", "claro", "útil"]),
+      uniqueValue: "explicaciones prácticas y ejemplos reales",
+      tone: JSON.stringify(["conversacional", "natural"]),
+      desiredAction: "contactar",
+      wordCount: 3000,
+      localKnowledge: null,
+      language: "es",
+    };
+    const prompt = buildArticlePrompt((config[0] || defaultConfig), keyword, secondaryKeywords);
 
     // Generate content with Gemini
     try {
