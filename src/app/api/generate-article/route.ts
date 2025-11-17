@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { geminiClient, MODEL_ID } from "@/lib/gemini";
+import { geminiClient, MODEL_ID, genaiPool } from "@/lib/gemini";
 import { buildArticlePrompt, extractMetadata, countWords } from "@/lib/prompt-builder";
 import { db } from "@/db";
 import { aiConfigurations, articles } from "@/db/schema";
@@ -119,6 +119,7 @@ export async function POST(req: NextRequest) {
         );
       }
 
+      const release = await genaiPool.acquire()
       const response = await geminiClient.models.generateContent({
         model: MODEL_ID,
         contents: [
@@ -132,6 +133,7 @@ export async function POST(req: NextRequest) {
           },
         ],
       });
+      release()
 
       // Extract text from response - correct structure
       if (!response.candidates || response.candidates.length === 0) {

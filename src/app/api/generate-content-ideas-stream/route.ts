@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-  import { geminiClient, MODEL_ID } from "@/lib/gemini";
+import { geminiClient, MODEL_ID, genaiPool } from "@/lib/gemini";
   import { db } from "@/db";
   import { contentIdeas, aiConfigurations } from "@/db/schema";
   import { eq } from "drizzle-orm";
@@ -53,18 +53,23 @@ import { fetchWebsiteContent, fetchSitemapPosts, fetchSitemapDeep } from "@/lib/
           throw err as any;
         }
 
-        const result = await geminiClient.models.generateContentStream({
-          model: MODEL_ID,
-          contents: [{ role: "user", parts: [{ text: prompt }] }],
-        });
-        
-        return result;
+        const release = await genaiPool.acquire()
+        try {
+          const result = await geminiClient.models.generateContentStream({
+            model: MODEL_ID,
+            contents: [{ role: "user", parts: [{ text: prompt }] }],
+          });
+          
+          return result;
+        } finally {
+          release()
+        }
       } catch (error: any) {
         lastError = error;
         const status = error.status;
         
         if (status === 503 || status === 429) {
-          const backoffTime = Math.pow(2, attempt) * 1000;
+          const backoffTime = Math.pow(2, attempt) * 1000 + Math.floor(Math.random() * 500);
           console.log(`Attempt ${attempt + 1} failed with status ${status}. Retrying in ${backoffTime}ms...`);
           await new Promise(resolve => setTimeout(resolve, backoffTime));
           continue;

@@ -9,7 +9,8 @@ export const FREE_LIMITS = {
 }
 
 export async function isFreeLimitReached(type: "articles" | "ideas" | "structures", configId: number) {
-  if (process.env.DISABLE_FREE_LIMITS === "true") return false
+  const disabled = process.env.DISABLE_FREE_LIMITS !== "false"
+  if (disabled) return false
   if (type === "articles") {
     const rows = await db.select({ id: articles.id }).from(articles).where(eq(articles.configId, configId)).limit(FREE_LIMITS.articles)
     return rows.length >= FREE_LIMITS.articles

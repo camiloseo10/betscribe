@@ -830,6 +830,14 @@ ${article.content}
                               {languageOptions.find(l => l.code === selectedConfig.language)?.flag}{' '}
                               {languageOptions.find(l => l.code === selectedConfig.language)?.name || 'Español'}
                             </Badge>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="ml-auto"
+                              onClick={() => (window.location.href = `/entrenar-ia?editId=${selectedConfig.id}`)}
+                            >
+                              Editar perfil
+                            </Button>
                           </div>
                         </div>
                       )}

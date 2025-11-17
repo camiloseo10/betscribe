@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import Navigation from "@/components/Navigation"
 import Footer from "@/components/Footer"
 import { Button } from "@/components/ui/button"
@@ -11,12 +11,13 @@ import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
-import { Loader2, Sparkles, CheckCircle, ArrowRight, ArrowLeft, Building2, Users, Heart, Settings, Eye, Trash2, Globe } from "lucide-react"
+import { Loader2, Sparkles, CheckCircle, ArrowRight, ArrowLeft, Building2, Users, Heart, Settings, Eye, Trash2, Globe, Edit3 } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
 
 export default function EntrenarIAPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [loading, setLoading] = useState(false)
   const [step, setStep] = useState(1)
   const [existingProfiles, setExistingProfiles] = useState<any[]>([])
@@ -24,6 +25,7 @@ export default function EntrenarIAPage() {
   const [manageOpen, setManageOpen] = useState(false)
   const [selectedProfileIds, setSelectedProfileIds] = useState<number[]>([])
   const [bulkDeleting, setBulkDeleting] = useState(false)
+  const [editingProfileId, setEditingProfileId] = useState<number | null>(null)
 
   // Form state
   const [formData, setFormData] = useState({
@@ -89,6 +91,20 @@ export default function EntrenarIAPage() {
 
   useEffect(() => {
     loadExistingProfiles()
+    const editId = searchParams?.get("editId")
+    if (editId && !isNaN(parseInt(editId))) {
+      ;(async () => {
+        try {
+          const res = await fetch(`/api/configurations?id=${editId}`)
+          if (res.ok) {
+            const profile = await res.json()
+            startEditProfile(profile)
+          }
+        } catch (e) {
+          // ignore
+        }
+      })()
+    }
   }, [])
 
   const loadExistingProfiles = async () => {
@@ -155,6 +171,52 @@ export default function EntrenarIAPage() {
     }
   }
 
+  const startEditProfile = (profile: any) => {
+    setEditingProfileId(profile.id)
+    setFormData({
+      name: profile.name || "",
+      businessName: profile.businessName || "",
+      businessType: profile.businessType || "",
+      location: profile.location || "",
+      expertise: profile.expertise || "",
+      targetAudience: (() => { try { return JSON.parse(profile.targetAudience || "[]") } catch { return [] } })(),
+      mainService: profile.mainService || "",
+      brandPersonality: (() => { try { return JSON.parse(profile.brandPersonality || "[]") } catch { return [] } })(),
+      uniqueValue: profile.uniqueValue || "",
+      tone: (() => { try { return JSON.parse(profile.tone || "[]") } catch { return [] } })(),
+      desiredAction: profile.desiredAction || "",
+      wordCount: profile.wordCount || 3000,
+      localKnowledge: profile.localKnowledge || "",
+      language: profile.language || "es",
+      isDefault: !!profile.isDefault,
+    })
+    setStep(1)
+    setManageOpen(false)
+    toast.info("Editando perfil: " + (profile.name || profile.businessName || profile.id))
+  }
+
+  const cancelEdit = () => {
+    setEditingProfileId(null)
+    setFormData({
+      name: "",
+      businessName: "",
+      businessType: "",
+      location: "",
+      expertise: "",
+      targetAudience: [],
+      mainService: "",
+      brandPersonality: [],
+      uniqueValue: "",
+      tone: [],
+      desiredAction: "",
+      wordCount: 3000,
+      localKnowledge: "",
+      language: "es",
+      isDefault: false,
+    })
+    toast.info("Edición cancelada")
+  }
+
   const toggleArrayItem = (array: string[], item: string) => {
     if (array.includes(item)) {
       return array.filter((i) => i !== item)
@@ -184,8 +246,11 @@ export default function EntrenarIAPage() {
     setLoading(true)
 
     try {
-      const response = await fetch("/api/configurations", {
-        method: "POST",
+      const isEditing = editingProfileId !== null
+      const url = isEditing ? `/api/configurations?id=${editingProfileId}` : "/api/configurations"
+      const method = isEditing ? "PUT" : "POST"
+      const response = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: formData.name,
@@ -211,9 +276,13 @@ export default function EntrenarIAPage() {
       }
 
       const result = await response.json()
-
-      toast.success("¡Perfil de IA guardado exitosamente!")
-      router.push("/generar")
+      toast.success(isEditing ? "Perfil actualizado exitosamente" : "¡Perfil de IA guardado exitosamente!")
+      await loadExistingProfiles()
+      if (!isEditing) {
+        router.push("/generar")
+      } else {
+        setEditingProfileId(null)
+      }
     } catch (error) {
       console.error(error)
       toast.error("Error al guardar el perfil")
@@ -311,9 +380,15 @@ export default function EntrenarIAPage() {
                                 </div>
                               </div>
                             </div>
-                            <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => deleteProfile(profile.id)}>
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+                            <div className="flex items-center gap-2">
+                              <Button size="sm" variant="outline" className="gap-2" onClick={() => startEditProfile(profile)}>
+                                <Edit3 className="w-4 h-4" />
+                                Editar
+                              </Button>
+                              <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => deleteProfile(profile.id)}>
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
                           </div>
                         )
                       })}
@@ -332,14 +407,20 @@ export default function EntrenarIAPage() {
                   >
                     <div className="flex items-start justify-between mb-2">
                       <h3 className="font-semibold text-lg">{profile.name}</h3>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                        onClick={() => deleteProfile(profile.id)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <Button size="sm" variant="outline" className="gap-2" onClick={() => startEditProfile(profile)}>
+                          <Edit3 className="w-4 h-4" />
+                          Editar
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => deleteProfile(profile.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
                     <p className="text-sm text-muted-foreground mb-2">{profile.businessName}</p>
                     <div className="flex items-center gap-2 mb-2">
@@ -412,6 +493,12 @@ export default function EntrenarIAPage() {
           {/* Main Form */}
           <div className="lg:col-span-2">
             <div className="bg-card rounded-xl border shadow-lg p-6 md:p-8 animate-fade-in-up">
+              {editingProfileId !== null && (
+                <div className="mb-4 p-3 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-between">
+                  <span className="text-sm text-primary">Modo edición de perfil</span>
+                  <Button size="sm" variant="outline" onClick={cancelEdit}>Cancelar edición</Button>
+                </div>
+              )}
               {/* Step 1: Tu negocio */}
               {step === 1 && (
                 <div className="space-y-6 animate-fade-in">
@@ -860,7 +947,7 @@ export default function EntrenarIAPage() {
                       disabled={loading}
                     >
                       {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-                      {loading ? "Guardando..." : "Guardar Perfil"}
+                      {loading ? (editingProfileId !== null ? "Actualizando..." : "Guardando...") : (editingProfileId !== null ? "Actualizar Perfil" : "Guardar Perfil")}
                       {!loading && <CheckCircle className="w-4 h-4" />}
                     </Button>
                   </div>

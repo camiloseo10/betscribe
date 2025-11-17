@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { geminiClient, MODEL_ID } from "@/lib/gemini";
+import { geminiClient, MODEL_ID, genaiPool } from "@/lib/gemini";
 import { buildArticlePrompt, extractMetadata, countWords } from "@/lib/prompt-builder";
 import { db } from "@/db";
 import { aiConfigurations, articles } from "@/db/schema";
@@ -53,7 +53,9 @@ async function generateWithRetry(prompt: string, maxRetries = 3) {
         throw err as any;
       }
 
-      const response = await geminiClient.models.generateContentStream({
+      const release = await genaiPool.acquire()
+      try {
+        const response = await geminiClient.models.generateContentStream({
         model: MODEL_ID,
         contents: [
           {
@@ -66,8 +68,10 @@ async function generateWithRetry(prompt: string, maxRetries = 3) {
           },
         ],
       });
-      
-      return response; // Success!
+        return response; // Success!
+      } finally {
+        release()
+      }
     } catch (error: any) {
       lastError = error;
       const isRetryable = error.status === 503 || error.status === 429 || error.code === 503 || error.code === 429;
@@ -77,7 +81,7 @@ async function generateWithRetry(prompt: string, maxRetries = 3) {
       }
       
       // Exponential backoff: 2s, 4s, 8s...
-      const waitTime = Math.pow(2, attempt + 1) * 1000;
+      const waitTime = Math.pow(2, attempt + 1) * 1000 + Math.floor(Math.random() * 500);
       console.log(`Attempt ${attempt + 1} failed with ${error.status || error.code}. Retrying in ${waitTime}ms...`);
       await sleep(waitTime);
     }

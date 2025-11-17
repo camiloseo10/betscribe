@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { geminiClient, MODEL_ID } from "@/lib/gemini";
+import { geminiClient, MODEL_ID, genaiPool } from "@/lib/gemini";
 import { db } from "@/db";
 import { createClient } from "@libsql/client";
 import { seoStructures, aiConfigurations } from "@/db/schema";
@@ -50,12 +50,17 @@ async function generateWithRetry(
         throw { status: 401, message: "GOOGLE_GEMINI_API_KEY no está configurada" };
       }
 
-      const result = await geminiClient.models.generateContentStream({
-        model: MODEL_ID,
-        contents: [{ role: "user", parts: [{ text: prompt }] }],
-      });
-      
-      return result;
+      const release = await genaiPool.acquire()
+      try {
+        const result = await geminiClient.models.generateContentStream({
+          model: MODEL_ID,
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
+        });
+        
+        return result;
+      } finally {
+        release()
+      }
     } catch (error: any) {
       lastError = {
         status: error.status || error.statusCode,
@@ -63,7 +68,7 @@ async function generateWithRetry(
       };
       
       if (lastError.status === 503 || lastError.status === 429) {
-        const waitTime = Math.pow(2, attempt) * 1000;
+        const waitTime = Math.pow(2, attempt) * 1000 + Math.floor(Math.random() * 500);
         await new Promise(resolve => setTimeout(resolve, waitTime));
         continue;
       }
