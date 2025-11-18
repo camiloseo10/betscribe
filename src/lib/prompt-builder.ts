@@ -86,6 +86,7 @@ Ahora necesito tu ayuda para crear contenido enfocado en SEO utilizando toda tu 
 Estas palabras NUNCA deben aparecer en el artículo bajo ninguna circunstancia:
 • Sumergirnos, Dominar, Navegar, Navegando, Dominando
 • En consecuencia, En resumen, En conclusión, En definitiva
+• "Piénsalo así", "Piensalo así"
 
 **SI ENCUENTRAS ALGUNA DE ESTAS PALABRAS EN TU TEXTO, REESCRIBE INMEDIATAMENTE LA FRASE COMPLETA.**
 
@@ -160,7 +161,7 @@ Evita absolutamente estas palabras y frases cliché salvo que sean absolutamente
 
 **ESTRUCTURA REQUERIDA:**
 - Introducción impactante con el problema/necesidad del lector (SIN presentarte como instructor o experto)
-  - Nunca empieces con "Imagina", "Imagínate", "Piensa" o fórmulas similares; usa una frase informativa y natural relacionada con la palabra clave
+  - Nunca empieces con "Imagina", "Imagínate", "Piensa", "Piénsalo así" o fórmulas similares; usa una frase informativa y natural relacionada con la palabra clave
 - Subtítulos optimizados (H2, H3) con palabras clave
 - Contenido detallado con ejemplos prácticos y datos relevantes de tu investigación
 - **Tablas cuando sea apropiado** (comparaciones, características, precios, pros/contras, especificaciones, cronogramas, etc.)
@@ -187,7 +188,7 @@ Evita absolutamente estas palabras y frases cliché salvo que sean absolutamente
   - ❌ INCORRECTO: "Cómo Aprender A Esquiar En Familia" / "How To Learn Skiing With Your Family"
 
  **REGLAS ADICIONALES PARA ESCRITURA NATURAL Y HUMANA:**
-- **🚫 PALABRAS ABSOLUTAMENTE PROHIBIDAS:** Sumergirnos, Dominar, Navegar, Navegando, Dominando, En consecuencia, En resumen, En conclusión, En definitiva. Estas palabras NUNCA deben aparecer. Si las escribes accidentalmente, BORRA TODA LA FRASE y reescríbela de forma diferente.
+- **🚫 PALABRAS ABSOLUTAMENTE PROHIBIDAS:** Sumergirnos, Dominar, Navegar, Navegando, Dominando, En consecuencia, En resumen, En conclusión, En definitiva, "Piénsalo así", "Piensalo así". Estas palabras NUNCA deben aparecer. Si las escribes accidentalmente, BORRA TODA LA FRASE y reescríbela de forma diferente.
 - **EVITA PALABRAS CLICHÉ:** Revisa cada frase y elimina las palabras de la lista prohibida arriba
 - **TONO CONVERSACIONAL:** Escribe como si explicaras algo a un amigo, no a un auditorio
 - **FRASES DIRECTAS:** Prefiere "Te conviene hacer X" en lugar de "Es crucial realizar X"
@@ -241,7 +242,7 @@ Ejemplo de tabla HTML:
 - Usa capitalización de oración en todos los títulos y encabezados (solo primera palabra y nombres propios en mayúscula)
 - NO uses "Conclusión" como título o encabezado
 - NO te presentes como instructor al inicio - empieza directamente con contenido útil
-- **REVISIÓN FINAL OBLIGATORIA DE PALABRAS PROHIBIDAS:** Antes de terminar, haz una búsqueda completa de estas palabras en TODO tu artículo: Sumergirnos, Dominar, Navegar, Navegando, Dominando, En consecuencia, En resumen, En conclusión, En definitiva. Si encuentras ALGUNA de estas palabras, REESCRIBE INMEDIATAMENTE esas frases. Estas palabras están COMPLETAMENTE PROHIBIDAS.
+- **REVISIÓN FINAL OBLIGATORIA DE PALABRAS PROHIBIDAS:** Antes de terminar, haz una búsqueda completa de estas palabras en TODO tu artículo: Sumergirnos, Dominar, Navegar, Navegando, Dominando, En consecuencia, En resumen, En conclusión, En definitiva, "Piénsalo así", "Piensalo así". Si encuentras ALGUNA de estas palabras, REESCRIBE INMEDIATAMENTE esas frases. Estas palabras están COMPLETAMENTE PROHIBIDAS.
 - **REVISIÓN FINAL OBLIGATORIA:** Antes de terminar, relee TODO el artículo y elimina cualquier palabra cliché que hayas podido usar accidentalmente. Asegúrate de que suene como una conversación real, no como un texto corporativo.
 
 Genera ahora el artículo completo:`;
