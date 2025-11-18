@@ -272,6 +272,12 @@ export default function IdeasContenidoPage() {
                         children: [new Paragraph({
                           children: [new TextRun({ text: "Estrategia", bold: true })]
                         })],
+                        width: { size: 20, type: WidthType.PERCENTAGE },
+                      }),
+                      new TableCell({
+                        children: [new Paragraph({
+                          children: [new TextRun({ text: "Keywords Secundarias", bold: true })]
+                        })],
                         width: { size: 25, type: WidthType.PERCENTAGE },
                       }),
                     ],
@@ -293,6 +299,9 @@ export default function IdeasContenidoPage() {
                         }),
                         new TableCell({
                           children: [new Paragraph({ text: idea.content_strategy || "" })],
+                        }),
+                        new TableCell({
+                          children: [new Paragraph({ text: Array.isArray(idea.secondary_keywords) ? idea.secondary_keywords.join(", ") : (idea.secondary_keywords || "") })],
                         }),
                       ],
                     })
@@ -316,13 +325,14 @@ export default function IdeasContenidoPage() {
   const downloadAsCSV = async (contentIdeas: any) => {
     try {
       const ideas = JSON.parse(contentIdeas.ideas)
-      const headers = ["Keyword", "Title SEO", "Meta Description", "Objetivo", "Estrategia"]
+      const headers = ["Keyword", "Title SEO", "Meta Description", "Objetivo", "Estrategia", "Keywords Secundarias"]
       const rows: string[][] = ideas.map((idea: any) => [
         idea.keyword || "",
         idea.seo_title || "",
         idea.meta_description || "",
         idea.keyword_objective || "",
         idea.content_strategy || "",
+        Array.isArray(idea.secondary_keywords) ? idea.secondary_keywords.join("; ") : (idea.secondary_keywords || ""),
       ])
       const escape = (val: string) => {
         const s = String(val).replace(/"/g, '""')
@@ -364,6 +374,7 @@ export default function IdeasContenidoPage() {
           <td style=\"padding:6px;border:1px solid #ddd;\">${idea.meta_description || ''}</td>
           <td style=\"padding:6px;border:1px solid #ddd;\">${idea.keyword_objective || ''}</td>
           <td style=\"padding:6px;border:1px solid #ddd;\">${idea.content_strategy || ''}</td>
+          <td style=\"padding:6px;border:1px solid #ddd;\">${Array.isArray(idea.secondary_keywords) ? idea.secondary_keywords.join(', ') : (idea.secondary_keywords || '')}</td>
         </tr>`).join("")
       const html = `
         <table style=\"border-collapse:collapse;color:#000;font-size:13px;\">
@@ -374,6 +385,7 @@ export default function IdeasContenidoPage() {
               <th style=\"padding:6px;border:1px solid #ddd;\">Meta Description</th>
               <th style=\"padding:6px;border:1px solid #ddd;\">Objetivo</th>
               <th style=\"padding:6px;border:1px solid #ddd;\">Estrategia</th>
+              <th style=\"padding:6px;border:1px solid #ddd;\">Keywords Secundarias</th>
             </tr>
           </thead>
           <tbody>${tableRows}</tbody>
@@ -777,6 +789,7 @@ export default function IdeasContenidoPage() {
                             <th className="text-left p-3 font-semibold">Meta Description</th>
                             <th className="text-left p-3 font-semibold">Objetivo</th>
                             <th className="text-left p-3 font-semibold">Estrategia</th>
+                            <th className="text-left p-3 font-semibold">Keywords Secundarias</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -792,7 +805,8 @@ export default function IdeasContenidoPage() {
                                 </Badge>
                               </td>
                               <td className="p-3 text-xs text-muted-foreground">{idea.content_strategy}</td>
-                            </tr>
+                              <td className="p-3 text-xs text-muted-foreground">{Array.isArray(idea.secondary_keywords) ? idea.secondary_keywords.join(", ") : (idea.secondary_keywords || "")}</td>
+                          </tr>
                           ))}
                         </tbody>
                       </table>

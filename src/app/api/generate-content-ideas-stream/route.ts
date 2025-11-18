@@ -239,6 +239,7 @@ import { articles } from "@/db/schema";
     - meta_description: Descripción meta optimizada de 150-160 caracteres (en ${languageName})
     - keyword_objective: Intención de búsqueda (informational, transactional, navigational, o commercial)
     - content_strategy: Breve estrategia de contenido (2-3 frases en ${languageName})
+    - secondary_keywords: Lista de hasta 5 palabras clave secundarias relacionadas (en ${languageName})
 
   IMPORTANTE: Responde ÚNICAMENTE con un array JSON válido. No incluyas texto adicional, markdown, ni explicaciones. Solo el array JSON.
 
@@ -249,7 +250,8 @@ import { articles } from "@/db/schema";
       "seo_title": "Título SEO optimizado aquí",
       "meta_description": "Descripción meta optimizada aquí que explica el contenido de manera atractiva",
       "keyword_objective": "informational",
-      "content_strategy": "Estrategia de contenido clara y concisa"
+      "content_strategy": "Estrategia de contenido clara y concisa",
+      "secondary_keywords": ["keyword 2", "keyword 3", "keyword 4", "keyword 5"]
     },
     ...
   ]
@@ -466,7 +468,16 @@ import { articles } from "@/db/schema";
               }
 
               // Asignar las ideas válidas a la variable principal
-              ideasArray = validIdeas;
+              ideasArray = validIdeas.map((idea: any) => {
+                const out: any = { ...idea };
+                const sk = (idea.secondary_keywords ?? idea.secondaryKeys ?? idea.keywords_secundarias ?? idea.palabras_secundarias);
+                if (Array.isArray(sk)) {
+                  out.secondary_keywords = sk.map((s: any) => String(s).trim()).filter(Boolean).slice(0, 5);
+                } else if (typeof sk === 'string') {
+                  out.secondary_keywords = sk.split(/[,;\n]/).map(s => s.trim()).filter(Boolean).slice(0, 5);
+                }
+                return out;
+              });
 
             } catch (parseError: any) {
               console.error("Error parsing JSON:", parseError);

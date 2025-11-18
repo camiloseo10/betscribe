@@ -25,7 +25,7 @@ export async function fetchWebsiteContent(url: string): Promise<WebsiteContent> 
         'Upgrade-Insecure-Requests': '1',
       },
       // Add timeout
-      signal: AbortSignal.timeout(30000),
+      signal: AbortSignal.timeout(10000),
     });
 
     if (!response.ok) {
@@ -67,7 +67,7 @@ export interface SitemapAnalysis {
 
 export async function fetchSitemapPosts(sitemapUrl: string, maxUrls: number = 100): Promise<SitemapAnalysis> {
   try {
-    const res = await fetch(sitemapUrl, { headers: { 'Accept': 'application/xml,text/xml,*/*', 'User-Agent': 'Mozilla/5.0 (compatible; ContentAnalyzer/1.0)' }, signal: AbortSignal.timeout(30000) });
+    const res = await fetch(sitemapUrl, { headers: { 'Accept': 'application/xml,text/xml,*/*', 'User-Agent': 'Mozilla/5.0 (compatible; ContentAnalyzer/1.0)' }, signal: AbortSignal.timeout(10000) });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const xml = await res.text();
     // Extract <loc> tags
@@ -95,10 +95,10 @@ export async function fetchSitemapPosts(sitemapUrl: string, maxUrls: number = 10
     });
 
     // Best-effort: fetch a handful of pages to refine titles
-    const sample = urls.slice(0, Math.min(10, urls.length));
+    const sample = urls.slice(0, Math.min(6, urls.length));
     await Promise.all(sample.map(async (u) => {
       try {
-        const r = await fetch(u, { headers: { 'User-Agent': 'Mozilla/5.0 (compatible; ContentAnalyzer/1.0)' }, signal: AbortSignal.timeout(20000) });
+        const r = await fetch(u, { headers: { 'User-Agent': 'Mozilla/5.0 (compatible; ContentAnalyzer/1.0)' }, signal: AbortSignal.timeout(8000) });
         if (r.ok) {
           const html = await r.text();
           const title = extractTitle(html);
@@ -118,7 +118,7 @@ export async function fetchSitemapPosts(sitemapUrl: string, maxUrls: number = 10
 
 export async function fetchSitemapDeep(sitemapUrl: string, maxUrlsTotal: number = 300): Promise<SitemapAnalysis> {
   try {
-    const res = await fetch(sitemapUrl, { headers: { 'Accept': 'application/xml,text/xml,*/*', 'User-Agent': 'Mozilla/5.0 (compatible; ContentAnalyzer/1.0)' }, signal: AbortSignal.timeout(30000) });
+    const res = await fetch(sitemapUrl, { headers: { 'Accept': 'application/xml,text/xml,*/*', 'User-Agent': 'Mozilla/5.0 (compatible; ContentAnalyzer/1.0)' }, signal: AbortSignal.timeout(10000) });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const xml = await res.text();
     const childMatches = xml.match(/<sitemap>[\s\S]*?<loc>([^<]+)<\/loc>[\s\S]*?<\/sitemap>/gi) || [];
