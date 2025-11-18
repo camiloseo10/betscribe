@@ -4,6 +4,7 @@ import { geminiClient, MODEL_ID, genaiPool } from "@/lib/gemini";
   import { contentIdeas, aiConfigurations } from "@/db/schema";
   import { eq } from "drizzle-orm";
 import { fetchWebsiteContent, fetchSitemapPosts, fetchSitemapDeep } from "@/lib/website-analyzer";
+import { articles } from "@/db/schema";
 
   interface GeminiError {
     status?: number;
@@ -142,6 +143,7 @@ import { fetchWebsiteContent, fetchSitemapPosts, fetchSitemapDeep } from "@/lib/
             // Analyze website or sitemap if URL provided
             let websiteAnalysis = null;
             let sitemapAnalysis: { urls: string[]; titles: string[]; sitemapUrl: string } | null = null;
+            let existingArticles: Array<{ title?: string | null; seoTitle?: string | null; keyword?: string | null }> = [];
             if (websiteUrl && websiteUrl.trim() !== '') {
               try {
                 controller.enqueue(
@@ -163,6 +165,19 @@ import { fetchWebsiteContent, fetchSitemapPosts, fetchSitemapDeep } from "@/lib/
                 console.error('Website analysis error:', error);
                 // Continue without website analysis if it fails
               }
+            }
+
+            // Load existing articles to avoid duplicates
+            try {
+              controller.enqueue(
+                encoder.encode(`data: ${JSON.stringify({ type: "info", message: "Verificando artículos existentes para evitar duplicados..." })}\n\n`)
+              );
+              existingArticles = await db
+                .select({ title: articles.title, seoTitle: articles.seoTitle, keyword: articles.keyword })
+                .from(articles)
+                .limit(500);
+            } catch (e) {
+              // ignore
             }
 
             controller.enqueue(
@@ -193,6 +208,18 @@ import { fetchWebsiteContent, fetchSitemapPosts, fetchSitemapDeep } from "@/lib/
               const sampleTitles = sitemapAnalysis.titles.slice(0, 30);
               prompt += `Títulos/temas existentes (muestra): ${sampleTitles.join('; ')}\n`;
               prompt += `\nInstrucción: NO repitas ni varíes mínimamente estos temas; propone ángulos nuevos y palabras clave que no estén cubiertas.`;
+            }
+
+            if (existingArticles && existingArticles.length > 0) {
+              const sampleExisting = existingArticles
+                .map(a => (a.seoTitle || a.title || a.keyword || ''))
+                .filter(Boolean)
+                .slice(0, 40);
+              if (sampleExisting.length > 0) {
+                prompt += `\n\nARTÍCULOS EXISTENTES EN EL SITIO (evita repetirlos):\n`;
+                prompt += `Ejemplos: ${sampleExisting.join('; ')}\n`;
+                prompt += `\nREGLA ESTRICTA: NO propongas ideas que coincidan o sean variaciones mínimas de estos títulos/keywords. Entrega únicamente ideas nuevas que aún no se hayan abordado (aplica para todos los idiomas).`;
+              }
             }
 
             prompt += `\n\nInstrucciones:
@@ -388,17 +415,23 @@ import { fetchWebsiteContent, fetchSitemapPosts, fetchSitemapDeep } from "@/lib/
                       Object.keys(idea).length > 0;
               });
 
-              // Si tenemos sitemap, eliminar duplicados con títulos existentes
+              // Eliminar duplicados con sitemap y artículos existentes
               let validIdeas = validIdeasRaw;
-              if (sitemapAnalysis && sitemapAnalysis.titles.length > 0) {
-                const existing = new Set(sitemapAnalysis.titles.map(t => t.toLowerCase().trim()));
-                const norm = (s: string) => s.toLowerCase().trim().replace(/\s+/g, ' ');
-                validIdeas = validIdeasRaw.filter((idea: any) => {
-                  const k = norm(String(idea.keyword || ''));
-                  const st = norm(String(idea.seo_title || idea.title || idea.titulo || ''));
-                  return k && !existing.has(k) && st && !existing.has(st);
-                });
-              }
+              const norm = (s: string) => s.toLowerCase().trim().replace(/\s+/g, ' ');
+              const sitemapSet = sitemapAnalysis && sitemapAnalysis.titles.length > 0
+                ? new Set(sitemapAnalysis.titles.map(t => norm(t)))
+                : new Set<string>();
+              const existingArticleSet = existingArticles && existingArticles.length > 0
+                ? new Set(existingArticles.map(a => norm(String(a.seoTitle || a.title || a.keyword || ''))).filter(Boolean))
+                : new Set<string>();
+              validIdeas = validIdeasRaw.filter((idea: any) => {
+                const k = norm(String(idea.keyword || ''));
+                const st = norm(String(idea.seo_title || idea.title || idea.titulo || ''));
+                if (!k && !st) return false;
+                const dupSitemap = (k && sitemapSet.has(k)) || (st && sitemapSet.has(st));
+                const dupExisting = (k && existingArticleSet.has(k)) || (st && existingArticleSet.has(st));
+                return !dupSitemap && !dupExisting;
+              });
 
               console.log(`Ideas válidas encontradas: ${validIdeas.length} de ${ideasArray.length}`);
 
