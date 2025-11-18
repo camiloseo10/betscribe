@@ -41,9 +41,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search');
     const isDefaultParam = searchParams.get('is_default');
 
-    let query = db.select().from(aiConfigurations);
-
-    const conditions = [];
+    const conditions = [] as any[];
 
     // Search functionality
     if (search) {
@@ -63,14 +61,16 @@ export async function GET(request: NextRequest) {
       conditions.push(eq(aiConfigurations.isDefault, isDefaultValue));
     }
 
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions));
-    }
-
-    const results = await query
-      .orderBy(desc(aiConfigurations.createdAt))
-      .limit(limit)
-      .offset(offset);
+    const results = conditions.length > 0
+      ? await db.select().from(aiConfigurations)
+          .where(and(...conditions))
+          .orderBy(desc(aiConfigurations.createdAt))
+          .limit(limit)
+          .offset(offset)
+      : await db.select().from(aiConfigurations)
+          .orderBy(desc(aiConfigurations.createdAt))
+          .limit(limit)
+          .offset(offset);
 
     return NextResponse.json(results, { status: 200 });
 
