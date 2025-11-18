@@ -140,7 +140,7 @@ export default function GenerarPage() {
     setGeneratedArticle(null)
 
     // Show initial toast
-    const loadingToast = toast.loading("Generando artículo con IA...", {
+    const loadingToast = toast.loading("Generando artículo...", {
       description: "Esto puede tomar un momento"
     })
 

@@ -197,7 +197,7 @@ Evita absolutamente estas palabras y frases cliché salvo que sean absolutamente
 - **VARIACIÓN DE VOCABULARIO:** No repitas las mismas palabras de transición (además, asimismo, sin embargo)
 - **CONEXIÓN NATURAL DE PÁRRAFOS:** Mantén coherencia entre párrafos y, cuando aporte claridad, usa referencias suaves como "como vimos antes", "más adelante lo veremos con más detalle", "como pudiste observar en este artículo". Úsalas de forma ocasional y sin fórmulas repetitivas.
  - **COMPONENTE HUMANO Y FLUIDEZ:** Redacta con voz humana y enlaza las secciones de forma natural; evita que el texto parezca un catálogo de conceptos.
- - **CONEXIÓN NATURAL DE PÁRRAFOS:** Mantén coherencia entre párrafos y, cuando aporte claridad, usa referencias suaves como "como vimos antes", "más adelante lo veremos con más detalle", "como pudiste observar en este artículo". Úsalas de forma ocasional y sin fórmulas repetitivas.
+ - **ENCADENAMIENTO OBLIGATORIO DE PÁRRAFOS:** Conecta cada párrafo con el anterior de forma natural. Evita la estructura de catálogo (lista de encabezados con párrafos y conceptos aislados). Asegura un hilo narrativo continuo usando conectores variados y referencias suaves solo cuando aporten claridad; nunca fuerces la transición ni repitas el mismo conector.
 - **CIERRE HUMANO + ACCIÓN:** Puedes incluir una línea humana breve (p. ej., una muestra de cercanía) si encaja naturalmente, pero el cierre principal debe ser el llamado a la acción hacia: ${config.desiredAction}.
 - **PREGUNTAS Y RESPUESTAS:** Incluye preguntas naturales que tu lector podría tener
 - **METÁFORAS SIMPLES:** Usa comparaciones con cosas de la vida diaria cuando ayuden a explicar
