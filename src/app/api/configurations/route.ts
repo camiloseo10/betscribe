@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
-import { aiConfigurations } from '@/db/schema';
+import { aiConfigurations, articles, contentIdeas, seoStructures } from '@/db/schema';
 import { eq, like, and, or, desc } from 'drizzle-orm';
 
 export async function GET(request: NextRequest) {
@@ -333,6 +333,17 @@ export async function DELETE(request: NextRequest) {
         { error: 'Configuration not found' }, 
         { status: 404 }
       );
+    }
+
+    // Detach foreign references before delete to avoid constraint issues
+    try {
+      const numericId = parseInt(id)
+      // Set config_id to NULL in dependent tables
+      await db.update(articles).set({ configId: null }).where(eq(articles.configId, numericId))
+      await db.update(contentIdeas).set({ configId: null }).where(eq(contentIdeas.configId, numericId))
+      await db.update(seoStructures).set({ configId: null }).where(eq(seoStructures.configId, numericId))
+    } catch (relErr) {
+      // continue even if detach fails; delete attempt below will surface error
     }
 
     const deleted = await db.delete(aiConfigurations)
