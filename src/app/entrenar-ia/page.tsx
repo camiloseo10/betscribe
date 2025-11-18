@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Navigation from "@/components/Navigation"
 import Footer from "@/components/Footer"
@@ -17,7 +17,6 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 
 export default function EntrenarIAPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const [loading, setLoading] = useState(false)
   const [step, setStep] = useState(1)
   const [existingProfiles, setExistingProfiles] = useState<any[]>([])
@@ -91,21 +90,26 @@ export default function EntrenarIAPage() {
 
   useEffect(() => {
     loadExistingProfiles()
-    const editId = searchParams?.get("editId")
-    if (editId && !isNaN(parseInt(editId))) {
-      ;(async () => {
-        try {
-          const res = await fetch(`/api/configurations?id=${editId}`)
-          if (res.ok) {
-            const profile = await res.json()
-            startEditProfile(profile)
-          }
-        } catch (e) {
-          // ignore
-        }
-      })()
-    }
   }, [])
+
+  const handleEditId = async (editId: string) => {
+    try {
+      const res = await fetch(`/api/configurations?id=${editId}`)
+      if (res.ok) {
+        const profile = await res.json()
+        startEditProfile(profile)
+      }
+    } catch (e) {}
+  }
+
+  function EditIdLoader({ onEditId }: { onEditId: (id: string) => void }) {
+    const sp = useSearchParams()
+    useEffect(() => {
+      const id = sp?.get("editId")
+      if (id && !isNaN(parseInt(id))) onEditId(id)
+    }, [sp])
+    return null
+  }
 
   const loadExistingProfiles = async () => {
     try {
@@ -321,6 +325,9 @@ export default function EntrenarIAPage() {
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
+      <Suspense fallback={null}>
+        <EditIdLoader onEditId={handleEditId} />
+      </Suspense>
       
       <main className="container mx-auto px-4 py-8 md:py-12">
         {/* Header */}
