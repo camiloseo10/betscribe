@@ -413,13 +413,14 @@ ${article.content}
               )
             }
           } else if (element.tagName === "TABLE") {
-            // Process table
             const tableRows: TableRow[] = []
+            let maxCols = 0
             
             // Process thead
             const thead = element.querySelector("thead")
             if (thead) {
               thead.querySelectorAll("tr").forEach((tr) => {
+                maxCols = Math.max(maxCols, tr.children.length)
                 const cells: TableCell[] = []
                 tr.querySelectorAll("th, td").forEach((cell) => {
                   cells.push(
@@ -446,6 +447,7 @@ ${article.content}
             const tbody = element.querySelector("tbody")
             if (tbody) {
               tbody.querySelectorAll("tr").forEach((tr) => {
+                maxCols = Math.max(maxCols, tr.children.length)
                 const cells: TableCell[] = []
                 tr.querySelectorAll("td").forEach((cell) => {
                   cells.push(
@@ -464,10 +466,21 @@ ${article.content}
             }
             
             if (tableRows.length > 0) {
+              const totalWidthTwips = 9000
+              const colWidth = maxCols > 0 ? Math.floor(totalWidthTwips / maxCols) : totalWidthTwips
               paragraphs.push(
                 new Table({
                   rows: tableRows,
                   width: { size: 100, type: WidthType.PERCENTAGE },
+                  columnWidths: new Array(Math.max(1, maxCols)).fill(colWidth),
+                  borders: {
+                    top: { style: BorderStyle.SINGLE, size: 4, color: "D9D9D9" },
+                    bottom: { style: BorderStyle.SINGLE, size: 4, color: "D9D9D9" },
+                    left: { style: BorderStyle.SINGLE, size: 4, color: "D9D9D9" },
+                    right: { style: BorderStyle.SINGLE, size: 4, color: "D9D9D9" },
+                    insideHorizontal: { style: BorderStyle.SINGLE, size: 4, color: "D9D9D9" },
+                    insideVertical: { style: BorderStyle.SINGLE, size: 4, color: "D9D9D9" },
+                  },
                 })
               )
               paragraphs.push(new Paragraph({ text: "", spacing: { after: 200 } }))
@@ -492,6 +505,67 @@ ${article.content}
 
       // Create document
       const doc = new Document({
+        styles: {
+          paragraphStyles: [
+            {
+              id: "Normal",
+              name: "Normal",
+              run: {
+                font: "Arial",
+                size: 24,
+                color: "000000",
+              },
+            },
+            {
+              id: "Heading1",
+              name: "Heading 1",
+              basedOn: "Normal",
+              next: "Normal",
+              quickFormat: true,
+              run: {
+                font: "Arial",
+                size: 32,
+                bold: true,
+                color: "000000",
+              },
+              paragraph: {
+                spacing: { before: 300, after: 200 },
+              },
+            },
+            {
+              id: "Heading2",
+              name: "Heading 2",
+              basedOn: "Normal",
+              next: "Normal",
+              quickFormat: true,
+              run: {
+                font: "Arial",
+                size: 28,
+                bold: true,
+                color: "000000",
+              },
+              paragraph: {
+                spacing: { before: 250, after: 150 },
+              },
+            },
+            {
+              id: "Heading3",
+              name: "Heading 3",
+              basedOn: "Normal",
+              next: "Normal",
+              quickFormat: true,
+              run: {
+                font: "Arial",
+                size: 26,
+                bold: true,
+                color: "000000",
+              },
+              paragraph: {
+                spacing: { before: 200, after: 100 },
+              },
+            },
+          ],
+        },
         sections: [
           {
             properties: {},

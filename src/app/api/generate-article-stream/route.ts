@@ -92,6 +92,15 @@ async function generateWithRetry(prompt: string, maxRetries = 3) {
 
 export async function POST(req: NextRequest) {
   try {
+    if (!(db as any)) {
+      return new Response(
+        JSON.stringify({
+          error: "Base de datos no configurada",
+          details: "Faltan variables de entorno SNAPIK_DB_URL/SNAPIK_DB_TOKEN o TURSO_CONNECTION_URL/TURSO_AUTH_TOKEN",
+        }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
     const body = (await req.json()) as GenerateArticleStreamRequest;
     const { configId, keyword, secondaryKeywords, title, language } = body;
 

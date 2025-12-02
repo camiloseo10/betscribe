@@ -1,4 +1,30 @@
 import { GoogleGenAI } from "@google/genai";
+import fs from "fs";
+import path from "path";
+
+function loadEnvTxt() {
+  try {
+    const envPath = path.join(process.cwd(), ".env.txt");
+    if (fs.existsSync(envPath)) {
+      const content = fs.readFileSync(envPath, "utf8");
+      const lines = content.split(/\r?\n/);
+      for (const line of lines) {
+        const t = line.trim();
+        if (!t || t.startsWith("#")) continue;
+        const i = t.indexOf("=");
+        if (i > 0) {
+          const k = t.slice(0, i).trim();
+          const v = t.slice(i + 1).trim();
+          if (k && !(k in process.env)) {
+            process.env[k] = v;
+          }
+        }
+      }
+    }
+  } catch {}
+}
+
+loadEnvTxt();
 
 const apiKey = process.env.GOOGLE_GEMINI_API_KEY || null;
 
