@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import Navigation from "@/components/Navigation"
 import Footer from "@/components/Footer"
 import { Button } from "@/components/ui/button"
@@ -31,11 +32,13 @@ import { Document, Paragraph, TextRun, HeadingLevel, AlignmentType, Packer, Tabl
 import { saveAs } from "file-saver"
 
 export default function GenerarPage() {
+  const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [streaming, setStreaming] = useState(false)
   const [retrying, setRetrying] = useState(false)
   const [configurations, setConfigurations] = useState<any[]>([])
   const [selectedConfig, setSelectedConfig] = useState<any>(null)
+  const [profileSearch, setProfileSearch] = useState("")
   const [useClientProfile, setUseClientProfile] = useState(false)
   const [articles, setArticles] = useState<any[]>([])
   const [selectedArticleIds, setSelectedArticleIds] = useState<number[]>([])
@@ -62,6 +65,16 @@ export default function GenerarPage() {
     { code: "pt", name: "Português", flag: "🇵🇹" },
   ]
 
+  const filteredConfigurations = profileSearch.trim()
+    ? configurations.filter((c) => {
+        const q = profileSearch.trim().toLowerCase()
+        return (
+          String(c.name || "").toLowerCase().includes(q) ||
+          String(c.businessName || "").toLowerCase().includes(q)
+        )
+      })
+    : configurations
+
   useEffect(() => {
     loadConfigurations()
     loadArticles()
@@ -75,7 +88,7 @@ export default function GenerarPage() {
 
   const loadConfigurations = async () => {
     try {
-      const response = await fetch("/api/configurations")
+      const response = await fetch("/api/configurations?limit=200")
       if (response.ok) {
         const data = await response.json()
         setConfigurations(data)
@@ -96,7 +109,7 @@ export default function GenerarPage() {
 
   const loadArticles = async () => {
     try {
-      const response = await fetch("/api/articles?limit=50")
+      const response = await fetch("/api/articles?limit=200")
       if (response.ok) {
         const data = await response.json()
         // El API devuelve { success: true, articles: [...], total: n }
@@ -768,42 +781,49 @@ ${article.content}
                       <p className="text-muted-foreground mb-4">
                         No tienes perfiles guardados
                       </p>
-                      <Button onClick={() => (window.location.href = "/entrenar-ia")}>
+                      <Button onClick={() => router.push("/entrenar-ia")}> 
                         <Plus className="w-4 h-4 mr-2" />
                         Crear Perfil
                       </Button>
                     </div>
                   ) : (
                     <>
-                      <div className="space-y-2 mb-4">
-                        <Badge
-                          variant="secondary"
-                          className={`text-xs ${useClientProfile ? "bg-green-500/10 text-green-600 border-green-500/20" : "bg-red-500/10 text-red-600 border-red-500/20"}`}
-                        >
-                          {useClientProfile ? "Perfil activo" : "Perfil desactivado"}
-                        </Badge>
-                        <Label className="text-sm font-medium">Perfil activo</Label>
-                        <select
-                          className="w-full p-3 rounded-lg border border-border bg-background/50 backdrop-blur-sm hover:border-primary/50 transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
-                          value={selectedConfig?.id || ""}
-                          disabled={!useClientProfile}
-                          onChange={(e) => {
-                            const config = configurations.find(
-                              (c) => c.id === parseInt(e.target.value)
-                            )
-                            setSelectedConfig(config)
-                          }}
-                        >
-                          {configurations.map((config) => {
-                            const language = languageOptions.find(l => l.code === config.language) || languageOptions[0]
-                            return (
-                              <option key={config.id} value={config.id}>
-                                {config.name} ({language.flag} {language.name})
-                              </option>
-                            )
-                          })}
-                        </select>
-                      </div>
+                    <div className="space-y-2 mb-4">
+                      <Badge
+                        variant="secondary"
+                        className={`text-xs ${useClientProfile ? "bg-green-500/10 text-green-600 border-green-500/20" : "bg-red-500/10 text-red-600 border-red-500/20"}`}
+                      >
+                        {useClientProfile ? "Perfil activo" : "Perfil desactivado"}
+                      </Badge>
+                      <Label className="text-sm font-medium">Buscar perfil</Label>
+                      <Input
+                        placeholder="Ej: nombre del cliente"
+                        value={profileSearch}
+                        onChange={(e) => setProfileSearch(e.target.value)}
+                        className="h-10 bg-background/50 border-border hover:border-primary/50 focus:border-primary transition-colors"
+                      />
+                      <Label className="text-sm font-medium">Perfil activo</Label>
+                      <select
+                        className="w-full p-3 rounded-lg border border-border bg-background/50 backdrop-blur-sm hover:border-primary/50 transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
+                        value={selectedConfig?.id || ""}
+                        disabled={!useClientProfile}
+                        onChange={(e) => {
+                          const config = configurations.find(
+                            (c) => c.id === parseInt(e.target.value)
+                          )
+                          setSelectedConfig(config)
+                        }}
+                      >
+                        {filteredConfigurations.map((config) => {
+                          const language = languageOptions.find(l => l.code === config.language) || languageOptions[0]
+                          return (
+                            <option key={config.id} value={config.id}>
+                              {config.name} ({language.flag} {language.name})
+                            </option>
+                          )
+                        })}
+                      </select>
+                    </div>
 
                       {selectedConfig && (
                         <div className="p-4 rounded-xl bg-background/50 backdrop-blur-sm border border-border space-y-3">
@@ -834,7 +854,7 @@ ${article.content}
                               size="sm"
                               variant="outline"
                               className="ml-auto"
-                              onClick={() => (window.location.href = `/entrenar-ia?editId=${selectedConfig.id}`)}
+                              onClick={() => router.push(`/entrenar-ia?editId=${selectedConfig.id}`)}
                             >
                               Editar perfil
                             </Button>

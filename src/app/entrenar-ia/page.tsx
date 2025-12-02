@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, Suspense } from "react"
+import { useState, useEffect, Suspense, useRef } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Navigation from "@/components/Navigation"
 import Footer from "@/components/Footer"
@@ -104,10 +104,16 @@ export default function EntrenarIAPage() {
 
   function EditIdLoader({ onEditId }: { onEditId: (id: string) => void }) {
     const sp = useSearchParams()
+    const editId = sp?.get("editId")
+    const processedRef = useRef<string | null>(null)
     useEffect(() => {
-      const id = sp?.get("editId")
-      if (id && !isNaN(parseInt(id))) onEditId(id)
-    }, [sp])
+      if (editId && !isNaN(parseInt(editId))) {
+        if (processedRef.current !== editId) {
+          processedRef.current = editId
+          onEditId(editId)
+        }
+      }
+    }, [editId])
     return null
   }
 
@@ -196,7 +202,8 @@ export default function EntrenarIAPage() {
     })
     setStep(1)
     setManageOpen(false)
-    toast.info("Editando perfil: " + (profile.name || profile.businessName || profile.id))
+    try { toast.dismiss("editing-profile") } catch {}
+    toast.info("Editando perfil: " + (profile.name || profile.businessName || profile.id), { id: "editing-profile" })
   }
 
   const cancelEdit = () => {
