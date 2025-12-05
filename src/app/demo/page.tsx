@@ -159,7 +159,7 @@ export default function DemoPage() {
             <Badge variant="secondary" className="bg-secondary text-foreground border-border">Demo</Badge>
             <span className="text-sm font-medium text-foreground">Prueba las funciones antes de pagar</span>
           </div>
-          <h1 className="text-5xl font-bold mb-4 text-foreground">Demo de Snapcopy</h1>
+          <h1 className="text-5xl font-bold mb-4 text-foreground">Demo de BetScribe</h1>
           <p className="text-muted-foreground text-lg leading-relaxed">Explora generación de artículos, ideas y estructura SEO con ejemplos reales.</p>
         </div>
 

@@ -4,8 +4,12 @@ import path from "path";
 
 function loadEnvTxt() {
   try {
-    const envPath = path.join(process.cwd(), ".env.txt");
-    if (fs.existsSync(envPath)) {
+    const paths = [
+      path.join(process.cwd(), "env.txt"),
+      path.join(process.cwd(), ".env.txt")
+    ];
+    const envPath = paths.find((p) => fs.existsSync(p));
+    if (envPath) {
       const content = fs.readFileSync(envPath, "utf8");
       const lines = content.split(/\r?\n/);
       for (const line of lines) {
@@ -26,7 +30,7 @@ function loadEnvTxt() {
 
 loadEnvTxt();
 
-const apiKey = process.env.GOOGLE_GEMINI_API_KEY || null;
+const apiKey = process.env.BETSCRIBE_GEMINI_API_KEY || process.env.GOOGLE_GEMINI_API_KEY || null;
 
 export const geminiClient: GoogleGenAI | null = apiKey ? new GoogleGenAI({ apiKey }) : null;
 

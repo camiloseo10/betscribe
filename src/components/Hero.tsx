@@ -31,7 +31,7 @@ export default function Hero() {
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-secondary border border-border"
           >
             <Sparkles className="w-4 h-4 text-primary" aria-hidden="true" />
-            <span className="text-sm font-medium text-foreground">Potenciado por IA avanzada</span>
+            <span className="text-sm font-medium text-foreground">IA entrenada en iGaming</span>
           </motion.div>
 
           {/* Main Heading */}
@@ -41,7 +41,7 @@ export default function Hero() {
             transition={{ duration: 0.6, delay: 0.3 }}
             className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight"
           >
-            Crea artículos <span className="text-primary">SEO</span> perfectos con IA
+            Contenido optimizado para <span className="text-primary">apuestas</span> y <span className="text-primary">casinos</span> 
           </motion.h1>
 
           {/* Description */}
@@ -51,8 +51,8 @@ export default function Hero() {
             transition={{ duration: 0.6, delay: 0.4 }}
             className="max-w-3xl mx-auto text-lg md:text-xl text-muted-foreground leading-relaxed"
           >
-            Genera contenido detallado y optimizado en minutos. Artículos de 3000 palabras estructurados,
-            con análisis SEO y listos para posicionar en los primeros resultados de Google.
+            Genera artículos, reseñas y guías para apuestas deportivas y casinos. Optimizado para SEO,
+            con jerga correcta por región (cuotas/momios, RTP, volatilidad) y listo para posicionar.
           </motion.p>
 
           {/* CTA Buttons */}

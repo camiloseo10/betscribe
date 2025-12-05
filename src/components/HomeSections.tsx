@@ -6,21 +6,21 @@ import { CheckCircle, Eye, Sparkles, Zap, Target } from "lucide-react"
 
 export default function HomeSections() {
   const steps = [
-    { title: "Elige tu perfil de cliente", desc: "Usa tu configuración entrenada para adaptar el contenido a tu negocio" },
-    { title: "Ingresa tu palabra clave", desc: "Define el tema y deja que la IA investigue y estructure" },
-    { title: "Genera y exporta", desc: "Descarga en Word o copia para WordPress y publica" },
+    { title: "Elige tu perfil", desc: "Casa de apuestas, casino online o afiliado; tu estilo se aplica en todo" },
+    { title: "Ingresa tus keywords", desc: "Mercados, ligas, RTP, providers o slots; la IA investiga y estructura" },
+    { title: "Genera y exporta", desc: "Artículos, reseñas y estructuras SEO listas para WordPress y publicación" },
   ]
 
   const benefits = [
-    { icon: Sparkles, title: "Contenido listo para SEO", desc: "H1, H2, H3, metas y densidad balanceada" },
-    { icon: Target, title: "Consistencia", desc: "Misma calidad en artículos, ideas y estructura" },
-    { icon: Zap, title: "Velocidad", desc: "Resultados en minutos con flujo de trabajo claro" },
+    { icon: Sparkles, title: "Contenido listo para SEO", desc: "Cuotas/momios, RTP, volatilidad y términos clave integrados de forma natural" },
+    { icon: Target, title: "Consistencia", desc: "Misma calidad en artículos de apuestas, reseñas de casino e ideas" },
+    { icon: Zap, title: "Velocidad", desc: "Resultados en minutos con un flujo claro para iGaming" },
   ]
 
   const faqs = [
-    { q: "¿Cómo se entrena la IA?", a: "Crea tu perfil con datos de tu negocio y tono; se usa en todas las generaciones" },
-    { q: "¿Puedo exportar el contenido?", a: "Sí, descargas en Word, copias HTML o pegas formato Gutenberg" },
-    { q: "¿Qué incluye el plan gratuito?", a: "1 artículo, 1 estructura SEO y 1 lista de ideas por perfil" },
+    { q: "¿Cómo se entrena la IA?", a: "Defines tu enfoque (apuestas/casino), tono y mercados; se aplica en todo el contenido" },
+    { q: "¿Puedo exportar el contenido?", a: "Sí: Word, HTML y bloques Gutenberg para WordPress" },
+    { q: "¿Qué incluye el plan gratuito?", a: "1 artículo de apuestas/casino, 1 estructura SEO y 1 lista de ideas por perfil" },
   ]
 
   return (

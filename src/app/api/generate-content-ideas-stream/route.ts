@@ -15,8 +15,7 @@ import { articles } from "@/db/schema";
     if (!message) return "Error inesperado";
     return message
       .replace(/([a-z]+:\/\/[^\s]+)|libsql:\/\/[^\s]+/gi, "[enlace oculto]")
-      .replace(/[\w.-]+\.turso\.io/gi, "[host oculto]")
-      .replace(/orchids/gi, "[cluster]");
+      .replace(/[\w.-]+\.turso\.io/gi, "[host oculto]");
   }
 
   function formatApiError(error: GeminiError): string {
@@ -50,7 +49,7 @@ import { articles } from "@/db/schema";
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {
         if (!geminiClient) {
-          const err = { status: 401, message: "GOOGLE_GEMINI_API_KEY no está configurada" };
+          const err = { status: 401, message: "BETSCRIBE_GEMINI_API_KEY o GOOGLE_GEMINI_API_KEY no está configurada" };
           throw err as any;
         }
 

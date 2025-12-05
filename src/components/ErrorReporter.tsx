@@ -104,7 +104,7 @@ export default function ErrorReporter({ error, reset }: ReporterProps) {
               ¡Algo salió mal!
             </h1>
             <p className="text-muted-foreground">
-              Se ha producido un error inesperado. Inténtalo de nuevo con Snapcopy.
+              Se ha producido un error inesperado. Inténtalo de nuevo con BetScribe.
             </p>
           </div>
           <div className="space-y-2">

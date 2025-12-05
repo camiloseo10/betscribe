@@ -17,9 +17,7 @@ function sanitizeMessage(message?: string): string {
     // ocultar urls
     .replace(/([a-z]+:\/\/[^\s]+)|libsql:\/\/[^\s]+/gi, "[enlace oculto]")
     // ocultar dominios turso
-    .replace(/[\w.-]+\.turso\.io/gi, "[host oculto]")
-    // ocultar nombre de cluster previo
-    .replace(/orchids/gi, "[cluster]");
+    .replace(/[\w.-]+\.turso\.io/gi, "[host oculto]");
 }
 
 function formatApiError(error: ApiError): string {
@@ -47,7 +45,7 @@ async function generateWithRetry(
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       if (!geminiClient) {
-        throw { status: 401, message: "GOOGLE_GEMINI_API_KEY no está configurada" };
+        throw { status: 401, message: "BETSCRIBE_GEMINI_API_KEY o GOOGLE_GEMINI_API_KEY no está configurada" };
       }
 
       const release = await genaiPool.acquire()
@@ -118,10 +116,10 @@ export async function POST(request: NextRequest) {
     // Si se envía configId y no existe, continuamos con generación genérica
 
     const now = new Date().toISOString();
-    const dbUrl = (process.env.SNAPIK_DB_URL || process.env.DATABASE_URL || process.env.TURSO_CONNECTION_URL || '').trim();
-    const dbToken = (process.env.SNAPIK_DB_TOKEN || process.env.DATABASE_TOKEN || process.env.TURSO_AUTH_TOKEN || '').trim();
+    const dbUrl = (process.env.BETSCRIBE_DB_URL || process.env.DATABASE_URL || process.env.TURSO_CONNECTION_URL || '').trim();
+    const dbToken = (process.env.BETSCRIBE_DB_TOKEN || process.env.DATABASE_TOKEN || process.env.TURSO_AUTH_TOKEN || '').trim();
     if (!dbUrl || dbUrl === 'undefined' || dbUrl === 'null' || !dbToken || dbToken === 'undefined' || dbToken === 'null') {
-      const friendlyError = formatApiError({ status: 500, message: 'DB configuration missing or invalid. Please set SNAPIK_DB_URL/SNAPIK_DB_TOKEN (or TURSO_*).'});
+      const friendlyError = formatApiError({ status: 500, message: 'DB configuration missing or invalid. Please set BETSCRIBE_DB_URL/BETSCRIBE_DB_TOKEN (or TURSO_*).'});
       return new Response(
         encoder.encode(`data: ${JSON.stringify({ type: "error", error: friendlyError })}\n\n`),
         { status: 200, headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive' } }

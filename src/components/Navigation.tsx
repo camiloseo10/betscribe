@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Menu, X, Moon, Sun, Sparkles, Settings, Lightbulb, ListTree } from "lucide-react"
 import { useRouter, usePathname } from "next/navigation"
@@ -10,7 +11,7 @@ export default function Navigation() {
   const router = useRouter()
   const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
-  const [isDark, setIsDark] = useState(false)
+  const [isDark, setIsDark] = useState(() => typeof document !== "undefined" && document.documentElement.classList.contains("dark"))
   const [scrolled, setScrolled] = useState(false)
 
   useEffect(() => {
@@ -21,10 +22,7 @@ export default function Navigation() {
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
-  useEffect(() => {
-    const isDarkMode = document.documentElement.classList.contains("dark")
-    setIsDark(isDarkMode)
-  }, [])
+  
 
   const toggleTheme = () => {
     document.documentElement.classList.toggle("dark")
@@ -45,14 +43,14 @@ export default function Navigation() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <div className="flex-shrink-0">
-            <a 
-              href="/" 
+            <Link
+              href="/"
               className="flex items-center gap-2 text-2xl font-bold text-foreground hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-md px-2"
               aria-label="Inicio"
             >
-              <Image src="/logo-snapcopy.svg" alt="Snapcopy Logo" width={32} height={32} className="rounded-md" />
-              <span className="ml-1">Snapcopy</span>
-            </a>
+              <Image src="/logo_betscribe.webp" alt="BetScribe Logo" width={48} height={48} className="rounded-md" />
+              <span className="ml-1">BetScribe</span>
+            </Link>
           </div>
 
           {/* Desktop Navigation */}
@@ -96,14 +94,21 @@ export default function Navigation() {
                   <Lightbulb className="w-4 h-4" />
                   Ideas de contenido
                 </Button>
-                <Button
-                  variant="ghost"
-                  onClick={() => router.push("/estructura-seo")}
-                  className="gap-2"
-                >
-                  <ListTree className="w-4 h-4" />
-                  Estructura SEO
-                </Button>
+              <Button
+                variant="ghost"
+                onClick={() => router.push("/estructura-seo")}
+                className="gap-2"
+              >
+                <ListTree className="w-4 h-4" />
+                Estructura SEO
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => router.push("/resenas")}
+                className="gap-2"
+              >
+                Reseñas
+              </Button>
               <Button
                 variant="ghost"
                 onClick={() => router.push("/entrenar-ia")}
@@ -250,12 +255,22 @@ export default function Navigation() {
                   variant="ghost"
                   className="w-full justify-start gap-2"
                   onClick={() => {
+                    router.push("/resenas")
+                    setIsOpen(false)
+                  }}
+                >
+                  Reseñas
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start gap-2"
+                  onClick={() => {
                     router.push("/entrenar-ia")
                     setIsOpen(false)
                   }}
                 >
                   <Settings className="w-4 h-4" />
-                  Entrenar a Snapbot
+                  Entrenar IA
                 </Button>
               </>
             )}

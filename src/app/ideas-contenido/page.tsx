@@ -489,14 +489,14 @@ export default function IdeasContenidoPage() {
         <div className="mb-12 text-center max-w-3xl mx-auto">
           <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 rounded-full bg-secondary border border-border">
             <Lightbulb className="w-4 h-4 text-primary animate-pulse" />
-            <span className="text-sm font-medium text-foreground">Generador de ideas con Snapbot</span>
+            <span className="text-sm font-medium text-foreground">Generador de ideas para iGaming</span>
           </div>
           <h1 className="text-5xl font-bold mb-4 text-foreground">
-            Ideas de contenido SEO
+            Ideas de contenido para apuestas y casinos
           </h1>
           <p className="text-muted-foreground text-lg leading-relaxed">
-             Snapbot investiga tu tema y genera 50 ideas únicas de contenido optimizadas para SEO, 
-            basadas en las búsquedas principales de Google.
+            La IA investiga tu tema y genera 50 ideas optimizadas para SEO, 
+            enfocadas en apuestas deportivas, casinos y slots.
           </p>
 
           {/* Stats */}
@@ -643,7 +643,7 @@ export default function IdeasContenidoPage() {
                     </Label>
                     <Input
                       id="topic"
-                      placeholder="Ej: Marketing digital para pequeñas empresas"
+                      placeholder="Ej: apuestas LaLiga, ruleta en vivo, slots Pragmatic"
                       value={topic}
                       onChange={(e) => setTopic(e.target.value)}
                       className="h-11 bg-background/50 border-border hover:border-primary/50 focus:border-primary transition-colors"
@@ -662,7 +662,7 @@ export default function IdeasContenidoPage() {
                       className="h-11 bg-background/50 border-border hover:border-primary/50 focus:border-primary transition-colors"
                     />
                     <p className="text-xs text-muted-foreground">
-                      Si proporcionas una URL, analizaré tu sitio web y generaré ideas de contenido basadas en lagunas temáticas
+                      Si proporcionas una URL (operador/afiliado), analizaré el sitio y generaré ideas basadas en algunas temáticas
                     </p>
                   </div>
 
@@ -684,7 +684,7 @@ export default function IdeasContenidoPage() {
                       ))}
                     </select>
                     <p className="text-xs text-muted-foreground">
-                      Snapbot investigará en este idioma y generará ideas en este idioma
+                      BetScribe investigará y generará ideas en este idioma
                     </p>
                   </div>
 
@@ -779,7 +779,7 @@ export default function IdeasContenidoPage() {
                   <div className="text-center py-20">
                     <Loader2 className="w-12 h-12 animate-spin mx-auto text-primary mb-4" />
                     <p className="text-lg font-medium">Investigando y generando ideas...</p>
-                    <p className="text-sm text-muted-foreground mt-2">Snapbot está analizando el tema en {languageOptions.find(l => l.code === selectedLanguage)?.name}</p>
+                    <p className="text-sm text-muted-foreground mt-2">BetScribe está analizando el tema en {languageOptions.find(l => l.code === selectedLanguage)?.name}</p>
                   </div>
                 )}
 

@@ -46,11 +46,8 @@ export default function EntrenarIAPage() {
   })
 
   const audienceOptions = [
-    "niños",
-    "adolescentes",
     "jóvenes",
     "adultos",
-    "familias",
     "empresas",
     "profesionales",
     "principiantes",
@@ -533,10 +530,10 @@ export default function EntrenarIAPage() {
                       </Label>
                       <Input
                         id="name"
-                        placeholder="Ej: Mi Escuela de Esquí"
+                        placeholder="Ej: Perfil BetScribe España"
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        className="h-11"
+                        className="h-11 bg-background/50 border border-border hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg placeholder:text-muted-foreground"
                       />
                       <p className="text-sm text-muted-foreground">Identifica este perfil de IA para uso futuro</p>
                     </div>
@@ -547,10 +544,10 @@ export default function EntrenarIAPage() {
                       </Label>
                       <Input
                         id="businessName"
-                        placeholder="Ej: Bespoke Snowsports"
+                        placeholder="Ej: BetScribe Apuestas"
                         value={formData.businessName}
                         onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
-                        className="h-11"
+                        className="h-11 bg-background/50 border border-border hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg placeholder:text-muted-foreground"
                       />
                     </div>
 
@@ -560,10 +557,10 @@ export default function EntrenarIAPage() {
                       </Label>
                       <Input
                         id="businessType"
-                        placeholder="Ej: escuela de esquí, clínica dental, agencia de marketing"
+                        placeholder="Ej: casa de apuestas, casino online, sitio de pronósticos"
                         value={formData.businessType}
                         onChange={(e) => setFormData({ ...formData, businessType: e.target.value })}
-                        className="h-11"
+                        className="h-11 bg-background/50 border border-border hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg placeholder:text-muted-foreground"
                       />
                     </div>
 
@@ -573,10 +570,10 @@ export default function EntrenarIAPage() {
                       </Label>
                       <Input
                         id="location"
-                        placeholder="Ej: Grimentz-Zinal, Suiza"
+                        placeholder="Ej: Madrid, España"
                         value={formData.location}
                         onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                        className="h-11"
+                        className="h-11 bg-background/50 border border-border hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg placeholder:text-muted-foreground"
                       />
                     </div>
                   </div>
@@ -610,10 +607,10 @@ export default function EntrenarIAPage() {
                       </Label>
                       <Input
                         id="expertise"
-                        placeholder="Ej: instructor de esquí experimentado, dentista especializado"
+                        placeholder="Ej: analista de apuestas, operador de casino online"
                         value={formData.expertise}
                         onChange={(e) => setFormData({ ...formData, expertise: e.target.value })}
-                        className="h-11"
+                        className="h-11 bg-background/50 border border-border hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg placeholder:text-muted-foreground"
                       />
                     </div>
 
@@ -673,10 +670,10 @@ export default function EntrenarIAPage() {
                       </Label>
                       <Input
                         id="mainService"
-                        placeholder="Ej: enseñar a esquiar, realizar tratamientos dentales"
+                        placeholder="Ej: pronósticos deportivos, reseñas de casinos, guías de juegos"
                         value={formData.mainService}
                         onChange={(e) => setFormData({ ...formData, mainService: e.target.value })}
-                        className="h-11"
+                        className="h-11 bg-background/50 border border-border hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg placeholder:text-muted-foreground"
                       />
                     </div>
                   </div>
@@ -764,11 +761,11 @@ export default function EntrenarIAPage() {
                       </Label>
                       <Textarea
                         id="uniqueValue"
-                        placeholder="Ej: siempre saco lo mejor de cada persona y me adapto a su ritmo de aprendizaje"
+                        placeholder="Ej: análisis estadístico propio y enfoque responsable del juego"
                         value={formData.uniqueValue}
                         onChange={(e) => setFormData({ ...formData, uniqueValue: e.target.value })}
                         rows={4}
-                        className="resize-none"
+                        className="resize-none bg-background/50 border border-border hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg placeholder:text-muted-foreground"
                       />
                       <p className="text-sm text-muted-foreground">¿Qué te hace único en tu industria?</p>
                     </div>
@@ -779,10 +776,10 @@ export default function EntrenarIAPage() {
                       </Label>
                       <Input
                         id="localKnowledge"
-                        placeholder="Ej: conoces la zona como la palma de tu mano"
+                        placeholder="Ej: conoces ligas locales, regulaciones y operadores autorizados"
                         value={formData.localKnowledge}
                         onChange={(e) => setFormData({ ...formData, localKnowledge: e.target.value })}
-                        className="h-11"
+                        className="h-11 bg-background/50 border border-border hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg placeholder:text-muted-foreground"
                       />
                     </div>
                   </div>
@@ -840,7 +837,7 @@ export default function EntrenarIAPage() {
                         ))}
                       </div>
                       <p className="text-sm text-muted-foreground mt-2">
-                        La IA investigará y creará contenido en el idioma seleccionado
+                        BetScribe investigará y creará contenido en el idioma seleccionado
                       </p>
                     </div>
 
@@ -900,11 +897,11 @@ export default function EntrenarIAPage() {
                       </Label>
                       <Textarea
                         id="desiredAction"
-                        placeholder="Ej: ir a la escuela para aprender a esquiar o compartir la experiencia con familiares"
+                        placeholder="Ej: registrarse en operador regulado, apostar con criterio, reclamar un bono"
                         value={formData.desiredAction}
                         onChange={(e) => setFormData({ ...formData, desiredAction: e.target.value })}
                         rows={4}
-                        className="resize-none"
+                        className="resize-none bg-background/50 border border-border hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg placeholder:text-muted-foreground"
                       />
                       <p className="text-sm text-muted-foreground">¿Qué acción principal esperas de tus lectores?</p>
                     </div>
@@ -922,7 +919,7 @@ export default function EntrenarIAPage() {
                           step="100"
                           value={formData.wordCount}
                           onChange={(e) => setFormData({ ...formData, wordCount: parseInt(e.target.value) || 3000 })}
-                          className="h-11"
+                          className="h-11 bg-background/50 border border-border hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg placeholder:text-muted-foreground"
                         />
                         <span className="text-sm text-muted-foreground whitespace-nowrap">palabras</span>
                       </div>

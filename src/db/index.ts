@@ -14,8 +14,12 @@ function pickEnv(...vars: (string | undefined)[]) {
 
 function loadEnvTxt() {
   try {
-    const envPath = path.join(process.cwd(), '.env.txt');
-    if (fs.existsSync(envPath)) {
+    const paths = [
+      path.join(process.cwd(), 'env.txt'),
+      path.join(process.cwd(), '.env.txt')
+    ];
+    const envPath = paths.find((p) => fs.existsSync(p));
+    if (envPath) {
       const content = fs.readFileSync(envPath, 'utf8');
       const lines = content.split(/\r?\n/);
       for (const line of lines) {
@@ -37,13 +41,13 @@ function loadEnvTxt() {
 loadEnvTxt();
 
 const url = pickEnv(
-  process.env.SNAPIK_DB_URL,
+  process.env.BETSCRIBE_DB_URL,
   process.env.DATABASE_URL,
   process.env.TURSO_CONNECTION_URL
 );
 
 const authToken = pickEnv(
-  process.env.SNAPIK_DB_TOKEN,
+  process.env.BETSCRIBE_DB_TOKEN,
   process.env.DATABASE_TOKEN,
   process.env.TURSO_AUTH_TOKEN
 );
@@ -52,7 +56,7 @@ let client: ReturnType<typeof createClient> | null = null;
 
 if (!url || !authToken) {
   console.warn(
-    'DB configuration missing: set SNAPIK_DB_URL/SNAPIK_DB_TOKEN or TURSO_CONNECTION_URL/TURSO_AUTH_TOKEN in environment.'
+    'DB configuration missing: set BETSCRIBE_DB_URL/BETSCRIBE_DB_TOKEN or TURSO_CONNECTION_URL/TURSO_AUTH_TOKEN in environment.'
   );
 } else {
   client = createClient({ url, authToken });

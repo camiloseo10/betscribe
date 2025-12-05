@@ -2,25 +2,38 @@
 
 import Navigation from "@/components/Navigation"
 import Footer from "@/components/Footer"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useSyncExternalStore } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
+
+const userStore = (() => {
+  let u: any = null
+  const listeners = new Set<() => void>()
+  return {
+    set(value: any) { u = value; listeners.forEach((l) => l()) },
+    subscribe(fn: () => void) { listeners.add(fn); return () => listeners.delete(fn) },
+    get() { return u }
+  }
+})()
 
 export default function CuentaPage() {
   const [mode, setMode] = useState<"login" | "register">("login")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [name, setName] = useState("")
-  const [user, setUser] = useState<any>(null)
+  const user = useSyncExternalStore(userStore.subscribe, userStore.get, userStore.get)
 
   const loadUser = async () => {
     const res = await fetch("/api/auth/me")
     const data = await res.json()
-    setUser(data.user)
+    userStore.set(data.user)
   }
-  useEffect(() => { loadUser() }, [])
+  useEffect(() => {
+    const id = setTimeout(() => { void loadUser() }, 0)
+    return () => clearTimeout(id)
+  }, [])
 
   const submit = async () => {
     try {
@@ -47,7 +60,7 @@ export default function CuentaPage() {
     const res = await fetch("/api/auth/logout", { method: "POST" })
     if (res.ok) {
       toast.success("Sesión cerrada")
-      setUser(null)
+      userStore.set(null)
     } else {
       toast.error("No se pudo cerrar sesión")
     }

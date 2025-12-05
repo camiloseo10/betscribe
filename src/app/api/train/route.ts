@@ -208,21 +208,4 @@ export async function GET(request: NextRequest) {
 }
 
 // Endpoint para obtener modelos entrenados
-export async function GET_MODELS(request: NextRequest) {
-  try {
-    const models = Array.from(trainedModels.values());
-    
-    return NextResponse.json({
-      success: true,
-      models,
-      total: models.length
-    });
-    
-  } catch (error) {
-    console.error('Error obteniendo modelos:', error);
-    return NextResponse.json(
-      { error: 'Error interno del servidor' },
-      { status: 500 }
-    );
-  }
-}
+const getModels = () => Array.from(trainedModels.values())

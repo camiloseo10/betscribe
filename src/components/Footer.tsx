@@ -136,7 +136,7 @@ export default function Footer() {
 
         <div className="border-t border-border pt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
           <p className="text-muted-foreground text-sm">
-            © {currentYear} Snapcopy · Desarrollado por Snapik
+            © {currentYear} BetScribe
           </p>
           <div className="flex gap-6">
             <a 

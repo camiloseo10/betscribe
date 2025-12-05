@@ -64,6 +64,22 @@ export const seoStructures = sqliteTable('seo_structures', {
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
 });
+
+export const reviews = sqliteTable('reviews', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  configId: integer('config_id').references(() => aiConfigurations.id),
+  platformName: text('platform_name').notNull(),
+  platformType: text('platform_type').notNull(),
+  market: text('market').notNull(),
+  content: text('content').notNull().default(''),
+  seoTitle: text('seo_title').notNull().default(''),
+  metaDescription: text('meta_description').notNull().default(''),
+  wordCount: integer('word_count').notNull().default(0),
+  status: text('status').notNull().default('generating'),
+  errorMessage: text('error_message'),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});
 export const users = sqliteTable('users', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   email: text('email').notNull(),

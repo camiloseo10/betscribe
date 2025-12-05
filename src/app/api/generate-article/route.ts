@@ -18,8 +18,7 @@ function sanitizeMessage(message?: string): string {
   if (!message) return "Error inesperado";
   return message
     .replace(/([a-z]+:\/\/[^\s]+)|libsql:\/\/[^\s]+/gi, "[enlace oculto]")
-    .replace(/[\w.-]+\.turso\.io/gi, "[host oculto]")
-    .replace(/orchids/gi, "[cluster]");
+    .replace(/[\w.-]+\.turso\.io/gi, "[host oculto]");
 }
 
 function formatApiError(error: any): string {
@@ -27,7 +26,7 @@ function formatApiError(error: any): string {
     return "Has excedido el límite de solicitudes de la API de Gemini. Por favor espera unos minutos e intenta de nuevo. Considera actualizar tu plan en https://ai.google.dev/pricing";
   }
   if (error.status === 401 || error.code === 401) {
-    return "API key inválida o expirada. Por favor verifica tu GOOGLE_GEMINI_API_KEY";
+    return "API key inválida o expirada. Verifica BETSCRIBE_GEMINI_API_KEY o GOOGLE_GEMINI_API_KEY";
   }
   if (error.status === 403 || error.code === 403) {
     return "No tienes permisos para usar esta API. Verifica tu configuración de Google Cloud";
@@ -93,7 +92,7 @@ export async function POST(req: NextRequest) {
 
     // Build prompt
     const defaultConfig = {
-      businessName: "Snapcopy",
+      businessName: "BetScribe",
       businessType: "contenidos",
       location: "global",
       expertise: "redactor SEO",

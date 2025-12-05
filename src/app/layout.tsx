@@ -6,10 +6,10 @@ import { Toaster } from "@/components/ui/sonner";
 import Script from "next/script";
 
 export const metadata: Metadata = {
-  title: "Snapcopy - Crea Artículos SEO Perfectos con IA",
-  description: "Genera contenido optimizado para SEO en minutos con Inteligencia Artificial avanzada. Artículos detallados, estructurados y listos para posicionar en Google.",
+  title: "BetScribe - Crea Artículos SEO de Apuestas con IA",
+  description: "Genera contenido de iGaming y apuestas optimizado para SEO en minutos con IA avanzada. Artículos detallados, estructurados y listos para posicionar.",
   icons: {
-    icon: "/logo-snapcopy.svg",
+    icon: "/logo_betscribe.webp",
   },
   robots: {
     index: false,

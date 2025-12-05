@@ -781,14 +781,14 @@ ${article.content}
         <div className="mb-12 text-center max-w-3xl mx-auto">
           <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 rounded-full bg-secondary border border-border">
             <Sparkles className="w-4 h-4 text-primary animate-pulse" />
-            <span className="text-sm font-medium text-foreground">IA generativa avanzada</span>
+            <span className="text-sm font-medium text-foreground">Generador de artículos iGaming</span>
           </div>
           <h1 className="text-5xl font-bold mb-4 text-foreground">
-            Genera artículos SEO
+            Genera artículos para apuestas y casinos
           </h1>
           <p className="text-muted-foreground text-lg leading-relaxed">
-            Crea contenido optimizado en minutos con tu configuración personalizada. 
-            Potencia tu estrategia de contenido con inteligencia artificial.
+            Crea reseñas de slots y casinos, picks y pronósticos, y guías de juego responsable. 
+            Optimizado para SEO con jerga correcta por mercado (cuotas/momios, RTP, volatilidad).
           </p>
 
           {/* Stats */}
@@ -954,7 +954,7 @@ ${article.content}
                     </Label>
                     <Input
                       id="title"
-                      placeholder="Ej: Guía completa para aprender a esquiar"
+                      placeholder="Ej: Pronósticos LaLiga: guía de apuestas"
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
                       className="h-11 bg-background/50 border-border hover:border-primary/50 focus:border-primary transition-colors"
@@ -967,7 +967,7 @@ ${article.content}
                     </Label>
                     <Input
                       id="keyword"
-                      placeholder="Ej: aprender a esquiar"
+                      placeholder="Ej: apuestas LaLiga"
                       value={keyword}
                       onChange={(e) => setKeyword(e.target.value)}
                       className="h-11 bg-background/50 border-border hover:border-primary/50 focus:border-primary transition-colors"
@@ -980,11 +980,17 @@ ${article.content}
                     </Label>
                     <Input
                       id="secondaryKeywords"
-                      placeholder="Ej: clases de esquí, técnicas de esquí, equipo de esquí"
+                      placeholder="Ej: resultados Laliga hoy, apuestas deportivas, resultados partidos"
                       value={secondaryKeywords}
                       onChange={(e) => setSecondaryKeywords(e.target.value)}
                       className="h-11 bg-background/50 border-border hover:border-primary/50 focus:border-primary transition-colors"
                     />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="secondaryKeywords" className="text-xs text-muted-foreground">
+                      Ejemplos: cuotas, momios, bonos de bienvenida, RTP, volatilidad, apuestas en vivo
+                    </Label>
                   </div>
 
                   <div className="space-y-2">
@@ -1005,7 +1011,7 @@ ${article.content}
                       ))}
                     </select>
                     <p className="text-xs text-muted-foreground">
-                      Snapbot investigará y escribirá el contenido en el idioma seleccionado
+                      BetScribe investigará y escribirá el contenido en el idioma seleccionado
                     </p>
                   </div>
 
@@ -1110,8 +1116,8 @@ ${article.content}
                     <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-muted/50 flex items-center justify-center">
                       <Eye className="w-10 h-10 opacity-50" />
                     </div>
-                    <p className="text-lg font-medium">El artículo generado aparecerá aquí</p>
-                    <p className="text-sm mt-2">Completa el formulario y haz clic en "Generar Artículo"</p>
+                    <p className="text-lg font-medium">El artículo de apuestas/casino generado aparecerá aquí</p>
+                    <p className="text-sm mt-2">Completa el formulario y haz clic en "Generar artículo"</p>
                   </div>
                 )}
 

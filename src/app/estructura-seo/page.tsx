@@ -474,15 +474,15 @@ export default function EstructuraSeoPage() {
           <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
             <ListTree className="w-4 h-4 text-primary animate-pulse" />
             <span className="text-sm font-medium text-primary">
-              Estructuras SEO con IA
+              Estructuras SEO para iGaming con IA
             </span>
           </div>
           <h1 className="text-5xl font-bold mb-4 text-foreground">
-            Generador de estructura SEO
+            Generador de estructura SEO para apuestas y casinos
           </h1>
           <p className="text-muted-foreground text-lg leading-relaxed">
-            Snapbot investiga tu palabra clave y genera una estructura de encabezados H2 y H3 
-            optimizada para SEO, lista para descargar en Word o Google Docs.
+            La IA investiga tu palabra clave y genera una estructura H2/H3 optimizada para SEO, 
+            ideal para páginas de apuestas, reseñas de casino y guías de slots.
           </p>
 
           {/* Stats */}
@@ -632,13 +632,13 @@ export default function EstructuraSeoPage() {
                     </Label>
                     <Input
                       id="keyword"
-                      placeholder="Ej: cómo aprender inglés rápido"
+                      placeholder="Ej: apuestas LaLiga, ruleta en vivo, poker online"
                       value={keyword}
                       onChange={(e) => setKeyword(e.target.value)}
                       className="h-11 bg-background/50 border-border hover:border-primary/50 focus:border-primary transition-colors"
                     />
                     <p className="text-xs text-muted-foreground">
-                     Snapbot investigará esta palabra clave y creará una estructura H2/H3 optimizada
+                      BetScribe investigará esta palabra clave y creará una estructura H2/H3 optimizada
                     </p>
                   </div>
 
@@ -660,7 +660,7 @@ export default function EstructuraSeoPage() {
                       ))}
                     </select>
                     <p className="text-xs text-muted-foreground">
-                      Snapbot investigará y generará la estructura en este idioma
+                      BetScribe investigará y generará la estructura en este idioma
                     </p>
                   </div>
 
