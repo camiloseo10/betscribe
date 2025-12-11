@@ -1,10 +1,11 @@
 import { NextRequest } from "next/server";
 import { geminiClient, MODEL_ID, genaiPool } from "@/lib/gemini";
-  import { db } from "@/db";
-  import { contentIdeas, aiConfigurations } from "@/db/schema";
-  import { eq } from "drizzle-orm";
+import { db } from "@/db";
+import { contentIdeas, aiConfigurations } from "@/db/schema";
+import { eq, and, desc } from "drizzle-orm";
 import { fetchWebsiteContent, fetchSitemapPosts, fetchSitemapDeep } from "@/lib/website-analyzer";
 import { articles } from "@/db/schema";
+import { getUserBySessionToken } from "@/lib/auth";
 
   interface GeminiError {
     status?: number;
@@ -87,18 +88,44 @@ import { articles } from "@/db/schema";
     
     try {
       const body = await request.json();
-      const { configId, topic, websiteUrl, language = 'es' } = body;
+      const { configId: initialConfigId, topic, websiteUrl, language = 'es' } = body;
+
+      // Resolve user and configId
+      const token = request.cookies.get("session_token")?.value;
+      const user = token ? await getUserBySessionToken(token) : null;
       
-      // Free plan limit (solo si hay configId)
+      let finalConfigId = initialConfigId && !isNaN(parseInt(String(initialConfigId))) ? parseInt(String(initialConfigId)) : null;
+
+      if (!finalConfigId && user) {
+          // Try to find a configuration for the user
+          try {
+            const configs = await db.select().from(aiConfigurations)
+              .where(eq(aiConfigurations.userId, String(user.id)));
+            
+            if (configs.length > 0) {
+               const def = configs.find((c: any) => c.isDefault);
+               finalConfigId = def ? def.id : configs[0].id;
+            }
+          } catch (e) {
+            console.error("Error finding user configuration:", e);
+          }
+      }
+
+      if (!finalConfigId) {
+          return new Response(
+            encoder.encode(`data: ${JSON.stringify({ type: "error", error: "No se encontró una configuración de IA válida. Por favor, crea una configuración primero en la sección de Configuración.", code: "MISSING_CONFIG" })}\n\n`),
+            { status: 400, headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive' } }
+          );
+      }
+      
+      // Free plan limit
       const { isFreeLimitReached, freeLimitMessage } = await import("@/lib/limits");
-      if (configId && await isFreeLimitReached("ideas", parseInt(String(configId)))) {
+      if (await isFreeLimitReached("ideas", finalConfigId)) {
         return new Response(
           encoder.encode(`data: ${JSON.stringify({ type: "error", error: freeLimitMessage("ideas"), code: "FREE_LIMIT_REACHED" })}\n\n`),
           { status: 402, headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive' } }
         );
       }
-
-      // configId opcional
 
       if (!topic || topic.trim() === '') {
         return new Response(
@@ -118,12 +145,10 @@ import { articles } from "@/db/schema";
         );
       }
 
-      // Si se envía configId y no existe, continuamos con generación genérica
-
       const now = new Date().toISOString();
       const newContentIdea = await db.insert(contentIdeas)
         .values({
-          ...(configId && !isNaN(parseInt(String(configId))) ? { configId: parseInt(String(configId)) } : {}),
+          configId: finalConfigId,
           topic: topic.trim(),
           websiteUrl: websiteUrl || null,
           language,

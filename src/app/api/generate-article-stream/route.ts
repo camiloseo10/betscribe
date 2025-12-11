@@ -6,6 +6,7 @@ import { db } from "@/db";
 import { aiConfigurations, articles } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { isFreeLimitReached, freeLimitMessage } from "@/lib/limits";
+import { getUserBySessionToken } from "@/lib/auth";
 
 interface GenerateArticleStreamRequest {
   configId: number;
@@ -102,9 +103,36 @@ export async function POST(req: NextRequest) {
       );
     }
     const body = (await req.json()) as GenerateArticleStreamRequest;
-    const { configId, keyword, secondaryKeywords, title, language } = body;
+    const { configId: initialConfigId, keyword, secondaryKeywords, title, language } = body;
 
-    // Validate required fields (configId opcional)
+    // Resolve user and configId
+    const token = req.cookies.get("session_token")?.value;
+    const user = token ? await getUserBySessionToken(token) : null;
+    
+    let finalConfigId = initialConfigId && !isNaN(Number(initialConfigId)) ? Number(initialConfigId) : null;
+
+    if (!finalConfigId && user) {
+        try {
+          const configs = await db.select().from(aiConfigurations)
+            .where(eq(aiConfigurations.userId, String(user.id)));
+          
+          if (configs.length > 0) {
+             const def = configs.find((c: any) => c.isDefault);
+             finalConfigId = def ? def.id : configs[0].id;
+          }
+        } catch (e) {
+          console.error("Error finding user configuration:", e);
+        }
+    }
+
+    if (!finalConfigId) {
+        return new Response(
+          JSON.stringify({ error: "No se encontró una configuración de IA válida. Por favor, crea una configuración primero.", code: "MISSING_CONFIG" }),
+          { status: 400, headers: { "Content-Type": "application/json" } }
+        );
+    }
+
+    // Validate required fields
     if (!keyword || !title) {
       return new Response(
         JSON.stringify({ error: "keyword y title son requeridos" }),
@@ -119,18 +147,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Fetch configuration si se proporcionó
+    // Fetch configuration
     let config: any[] = [];
-    if (configId && !isNaN(configId)) {
+    if (finalConfigId) {
       config = await db
         .select()
         .from(aiConfigurations)
-        .where(eq(aiConfigurations.id, configId))
+        .where(eq(aiConfigurations.id, finalConfigId))
         .limit(1);
     }
 
-    // Free plan limit check (solo si hay configId)
-    if (configId && await isFreeLimitReached("articles", configId)) {
+    // Free plan limit check
+    if (await isFreeLimitReached("articles", finalConfigId)) {
       return new Response(JSON.stringify({ error: freeLimitMessage("articles"), code: "FREE_LIMIT_REACHED" }), { status: 402, headers: { "Content-Type": "application/json" } });
     }
 
@@ -139,7 +167,7 @@ export async function POST(req: NextRequest) {
     const newArticle = await db
       .insert(articles)
       .values({
-        ...(configId ? { configId } : {}),
+        configId: finalConfigId,
         title,
         keyword,
         secondaryKeywords: JSON.stringify(secondaryKeywords),

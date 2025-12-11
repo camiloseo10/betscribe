@@ -4,6 +4,7 @@ import { db } from "@/db"
 import { aiConfigurations, reviews } from "@/db/schema"
 import { eq } from "drizzle-orm"
 import { extractMetadata, countWords, buildResenaPrompt } from "@/lib/promt_builder_reseñas"
+import { getUserBySessionToken } from "@/lib/auth"
 
 function sanitizeMessage(message?: string): string {
   if (!message) return "Error inesperado"
@@ -28,10 +29,36 @@ function formatApiError(error: any): string {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { configId, nombrePlataforma, tipoPlataforma, mercadoObjetivo, language, wordCount } = body
+    const { configId: initialConfigId, nombrePlataforma, tipoPlataforma, mercadoObjetivo, language, wordCount } = body
 
     if (!nombrePlataforma || !tipoPlataforma || !mercadoObjetivo) {
       return NextResponse.json({ error: "Campos obligatorios faltantes" }, { status: 400 })
+    }
+
+    // Resolve user and configId
+    const token = request.cookies.get("session_token")?.value
+    const user = token ? await getUserBySessionToken(token) : null
+    
+    let finalConfigId = initialConfigId && !isNaN(parseInt(String(initialConfigId))) ? parseInt(String(initialConfigId)) : null
+
+    const hasDb = db && typeof (db as any).select === 'function'
+
+    if (!finalConfigId && user && hasDb) {
+        try {
+          const configs = await db.select().from(aiConfigurations)
+            .where(eq(aiConfigurations.userId, String(user.id)))
+          
+          if (configs.length > 0) {
+             const def = configs.find((c: any) => c.isDefault)
+             finalConfigId = def ? def.id : configs[0].id
+          }
+        } catch (e) {
+          console.error("Error finding user configuration:", e)
+        }
+    }
+
+    if (!finalConfigId && hasDb) {
+         return NextResponse.json({ error: "No se encontró una configuración de IA válida. Por favor, crea una configuración primero.", code: "MISSING_CONFIG" }, { status: 400 })
     }
 
     if (!geminiClient) {
@@ -54,9 +81,8 @@ export async function POST(request: NextRequest) {
     }
 
     let config: any | null = null
-    const hasDb = db && typeof (db as any).select === 'function'
-    if (configId && hasDb) {
-      const rows = await db.select().from(aiConfigurations).where(eq(aiConfigurations.id, parseInt(String(configId), 10))).limit(1)
+    if (finalConfigId && hasDb) {
+      const rows = await db.select().from(aiConfigurations).where(eq(aiConfigurations.id, finalConfigId)).limit(1)
       config = rows[0] || null
     }
     const defaultConfig = {
@@ -81,7 +107,7 @@ export async function POST(request: NextRequest) {
     let reviewId: number | null = null
     if (hasDb) {
       const inserted = await db.insert(reviews).values({
-        configId: usedConfig?.id || undefined,
+        configId: finalConfigId,
         platformName: nombrePlataforma,
         platformType: tipoPlataforma,
         market: mercadoObjetivo,

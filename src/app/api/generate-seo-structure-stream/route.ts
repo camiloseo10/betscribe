@@ -5,6 +5,7 @@ import { createClient } from "@libsql/client";
 import { seoStructures, aiConfigurations } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { fetchWebsiteContent } from "@/lib/website-analyzer";
+import { getUserBySessionToken } from "@/lib/auth";
 
 interface ApiError {
   status?: number;
@@ -83,10 +84,37 @@ export async function POST(request: NextRequest) {
   
   try {
     const body = await request.json();
-    const { configId, keyword, websiteUrl, language = 'es' } = body;
+    const { configId: initialConfigId, keyword, websiteUrl, language = 'es' } = body;
+
+    // Resolve user and configId
+    const token = request.cookies.get("session_token")?.value;
+    const user = token ? await getUserBySessionToken(token) : null;
+    
+    let finalConfigId = initialConfigId && !isNaN(parseInt(String(initialConfigId), 10)) ? parseInt(String(initialConfigId), 10) : null;
+
+    if (!finalConfigId && user) {
+        try {
+          const configs = await db.select().from(aiConfigurations)
+            .where(eq(aiConfigurations.userId, String(user.id)));
+          
+          if (configs.length > 0) {
+             const def = configs.find((c: any) => c.isDefault);
+             finalConfigId = def ? def.id : configs[0].id;
+          }
+        } catch (e) {
+          console.error("Error finding user configuration:", e);
+        }
+    }
+
+    if (!finalConfigId) {
+        return new Response(
+          encoder.encode(`data: ${JSON.stringify({ type: "error", error: "No se encontró una configuración de IA válida. Por favor, crea una configuración primero.", code: "MISSING_CONFIG" })}\n\n`),
+          { status: 400, headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive' } }
+        );
+    }
 
     const { isFreeLimitReached, freeLimitMessage } = await import("@/lib/limits");
-    if (configId && await isFreeLimitReached("structures", parseInt(String(configId)))) {
+    if (await isFreeLimitReached("structures", finalConfigId)) {
       return new Response(
         encoder.encode(`data: ${JSON.stringify({ type: "error", error: freeLimitMessage("structures"), code: "FREE_LIMIT_REACHED" })}\n\n`),
         { status: 402, headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive' } }
@@ -135,7 +163,7 @@ export async function POST(request: NextRequest) {
     `;
 
     const insertArgs = [
-      (configId && !isNaN(parseInt(String(configId), 10)) ? parseInt(String(configId), 10) : null),
+      finalConfigId,
       keyword.trim(),
       language || 'es',
       '{}',
