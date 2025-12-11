@@ -2,6 +2,17 @@ import { NextRequest, NextResponse } from "next/server"
 import { hashPassword, findUserByEmail, createUser, isAllowedEmail, generateVerificationCode, saveVerification } from "@/lib/auth"
 import { sendVerificationEmail } from "@/lib/mailer"
 
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      "Allow": "POST, OPTIONS",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    },
+  })
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { email, password, name } = await req.json()
