@@ -125,13 +125,6 @@ export async function POST(req: NextRequest) {
         }
     }
 
-    if (!finalConfigId) {
-        return new Response(
-          JSON.stringify({ error: "No se encontró una configuración de IA válida. Por favor, crea una configuración primero.", code: "MISSING_CONFIG" }),
-          { status: 400, headers: { "Content-Type": "application/json" } }
-        );
-    }
-
     // Validate required fields
     if (!keyword || !title) {
       return new Response(

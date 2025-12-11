@@ -106,13 +106,6 @@ export async function POST(request: NextRequest) {
         }
     }
 
-    if (!finalConfigId) {
-        return new Response(
-          encoder.encode(`data: ${JSON.stringify({ type: "error", error: "No se encontró una configuración de IA válida. Por favor, crea una configuración primero.", code: "MISSING_CONFIG" })}\n\n`),
-          { status: 400, headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive' } }
-        );
-    }
-
     const { isFreeLimitReached, freeLimitMessage } = await import("@/lib/limits");
     if (await isFreeLimitReached("structures", finalConfigId)) {
       return new Response(

@@ -60,10 +60,6 @@ export async function POST(req: NextRequest) {
         }
     }
 
-    if (!finalConfigId) {
-        return NextResponse.json({ error: "No se encontró una configuración de IA válida. Por favor, crea una configuración primero.", code: "MISSING_CONFIG" }, { status: 400 });
-    }
-
     // Validate required fields
     if (!keyword || !title) {
       return NextResponse.json(

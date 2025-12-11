@@ -44,24 +44,20 @@ export async function POST(request: NextRequest) {
     const hasDb = db && typeof (db as any).select === 'function'
 
     if (!finalConfigId && user && hasDb) {
-        try {
-          const configs = await db.select().from(aiConfigurations)
-            .where(eq(aiConfigurations.userId, String(user.id)))
-          
-          if (configs.length > 0) {
-             const def = configs.find((c: any) => c.isDefault)
-             finalConfigId = def ? def.id : configs[0].id
-          }
-        } catch (e) {
-          console.error("Error finding user configuration:", e)
-        }
-    }
-
-    if (!finalConfigId && hasDb) {
-         return NextResponse.json({ error: "No se encontró una configuración de IA válida. Por favor, crea una configuración primero.", code: "MISSING_CONFIG" }, { status: 400 })
-    }
-
-    if (!geminiClient) {
+         try {
+           const configs = await db.select().from(aiConfigurations)
+             .where(eq(aiConfigurations.userId, String(user.id)))
+           
+           if (configs.length > 0) {
+              const def = configs.find((c: any) => c.isDefault)
+              finalConfigId = def ? def.id : configs[0].id
+           }
+         } catch (e) {
+           console.error("Error finding user configuration:", e)
+         }
+     }
+ 
+     if (!geminiClient) {
       return new Response(
         new ReadableStream({
           start(controller) {

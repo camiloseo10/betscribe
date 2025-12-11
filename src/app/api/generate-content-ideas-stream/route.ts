@@ -111,13 +111,6 @@ import { getUserBySessionToken } from "@/lib/auth";
           }
       }
 
-      if (!finalConfigId) {
-          return new Response(
-            encoder.encode(`data: ${JSON.stringify({ type: "error", error: "No se encontró una configuración de IA válida. Por favor, crea una configuración primero en la sección de Configuración.", code: "MISSING_CONFIG" })}\n\n`),
-            { status: 400, headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive' } }
-          );
-      }
-      
       // Free plan limit
       const { isFreeLimitReached, freeLimitMessage } = await import("@/lib/limits");
       if (await isFreeLimitReached("ideas", finalConfigId)) {
