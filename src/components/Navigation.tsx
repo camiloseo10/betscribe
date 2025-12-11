@@ -29,6 +29,10 @@ export default function Navigation() {
     setIsDark(!isDark)
   }
 
+  const navigateProtected = (path: string) => {
+    router.push(path)
+  }
+
   const isHomePage = pathname === "/"
 
   return (
@@ -80,7 +84,7 @@ export default function Navigation() {
               <>
                 <Button
                   variant="ghost"
-                  onClick={() => router.push("/generar")}
+                  onClick={() => navigateProtected("/generar")}
                   className="gap-2"
                 >
                   <Sparkles className="w-4 h-4" />
@@ -88,7 +92,7 @@ export default function Navigation() {
                 </Button>
                 <Button
                   variant="ghost"
-                  onClick={() => router.push("/ideas-contenido")}
+                  onClick={() => navigateProtected("/ideas-contenido")}
                   className="gap-2"
                 >
                   <Lightbulb className="w-4 h-4" />
@@ -96,7 +100,7 @@ export default function Navigation() {
                 </Button>
               <Button
                 variant="ghost"
-                onClick={() => router.push("/estructura-seo")}
+                onClick={() => navigateProtected("/estructura-seo")}
                 className="gap-2"
               >
                 <ListTree className="w-4 h-4" />
@@ -104,14 +108,14 @@ export default function Navigation() {
               </Button>
               <Button
                 variant="ghost"
-                onClick={() => router.push("/resenas")}
+                onClick={() => navigateProtected("/resenas")}
                 className="gap-2"
               >
                 Reseñas
               </Button>
               <Button
                 variant="ghost"
-                onClick={() => router.push("/entrenar-ia")}
+                onClick={() => navigateProtected("/entrenar-ia")}
                 className="gap-2"
               >
                 <Settings className="w-4 h-4" />
@@ -119,14 +123,7 @@ export default function Navigation() {
               </Button>
               <Button
                 variant="ghost"
-                onClick={() => router.push("/demo")}
-                className="gap-2"
-              >
-                Demo
-              </Button>
-              <Button
-                variant="ghost"
-                onClick={() => router.push("/cuenta")}
+                onClick={() => navigateProtected("/cuenta")}
                 className="gap-2"
               >
                 Cuenta
@@ -149,7 +146,7 @@ export default function Navigation() {
             {isHomePage && (
               <Button 
                 className="focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                onClick={() => router.push("/generar")}
+                onClick={() => router.push("/cuenta?mode=register")}
               >
                 Comenzar gratis
               </Button>
@@ -222,7 +219,7 @@ export default function Navigation() {
                   variant="ghost"
                   className="w-full justify-start gap-2"
                   onClick={() => {
-                    router.push("/generar")
+                    navigateProtected("/generar")
                     setIsOpen(false)
                   }}
                 >
@@ -233,7 +230,7 @@ export default function Navigation() {
                   variant="ghost"
                   className="w-full justify-start gap-2"
                   onClick={() => {
-                    router.push("/ideas-contenido")
+                    navigateProtected("/ideas-contenido")
                     setIsOpen(false)
                   }}
                 >
@@ -244,7 +241,7 @@ export default function Navigation() {
                   variant="ghost"
                   className="w-full justify-start gap-2"
                   onClick={() => {
-                    router.push("/estructura-seo")
+                    navigateProtected("/estructura-seo")
                     setIsOpen(false)
                   }}
                 >
@@ -255,7 +252,7 @@ export default function Navigation() {
                   variant="ghost"
                   className="w-full justify-start gap-2"
                   onClick={() => {
-                    router.push("/resenas")
+                    navigateProtected("/resenas")
                     setIsOpen(false)
                   }}
                 >
@@ -265,7 +262,7 @@ export default function Navigation() {
                   variant="ghost"
                   className="w-full justify-start gap-2"
                   onClick={() => {
-                    router.push("/entrenar-ia")
+                    navigateProtected("/entrenar-ia")
                     setIsOpen(false)
                   }}
                 >
@@ -279,7 +276,7 @@ export default function Navigation() {
                 <Button 
                   className="w-full"
                   onClick={() => {
-                    router.push("/generar")
+                    router.push("/cuenta?mode=register")
                     setIsOpen(false)
                   }}
                 >

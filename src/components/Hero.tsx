@@ -65,7 +65,7 @@ export default function Hero() {
             <Button 
               size="lg" 
               className="text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-all focus:ring-2 focus:ring-ring focus:ring-offset-2"
-              onClick={() => router.push("/generar")}
+              onClick={() => router.push("/cuenta?mode=register")}
             >
               <Sparkles className="mr-2 h-5 w-5" aria-hidden="true" />
               Comenzar gratis
@@ -74,7 +74,7 @@ export default function Hero() {
               size="lg" 
               variant="outline" 
               className="text-lg px-8 py-6 focus:ring-2 focus:ring-ring focus:ring-offset-2"
-              onClick={() => router.push("/entrenar-ia")}
+              onClick={() => router.push("/cuenta?mode=register")}
             >
               Define tu estilo
             </Button>
