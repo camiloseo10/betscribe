@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     
     const sent = await sendVerificationEmail(email, code)
     if (!sent) {
-      return NextResponse.json({ success: true, pendingVerification: true, sent: false, email, name })
+      return NextResponse.json({ error: "No se pudo enviar el código de verificación" }, { status: 500 })
     }
     return NextResponse.json({ success: true, pendingVerification: true, sent: true, email, name })
   } catch (e: any) {

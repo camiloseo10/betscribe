@@ -65,6 +65,9 @@ async function sendViaResend(to: string, code: string) {
 }
 
 export async function sendVerificationEmail(to: string, code: string) {
+  // Prioritize Resend if available
+  if (process.env.RESEND_API_KEY && await sendViaResend(to, code)) return true
+  
   if (await sendViaSmtp(to, code)) return true
 
   async function sendViaStartTls(toAddr: string, codeStr: string) {
@@ -111,8 +114,7 @@ export async function sendVerificationEmail(to: string, code: string) {
   }
 
   if (await sendViaStartTls(to, code)) return true
-  if (await sendViaResend(to, code)) return true
-
+  
   // Fallback for development/demo if email config is missing
   console.log("========================================")
   console.log(`[DEV MODE] Verification Code for ${to}: ${code}`)

@@ -77,7 +77,13 @@ function CuentaContent() {
       const body: any = { email, password }
       if (mode === "register") body.name = name || email.split("@")[0]
       const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
-      const data = await res.json()
+      let data
+      try {
+        data = await res.json()
+      } catch {
+        throw new Error(`Error del servidor (${res.status})`)
+      }
+
       if (!res.ok) {
         toast.error(data.error || "Error")
         return
@@ -98,8 +104,8 @@ function CuentaContent() {
         const next = search?.get("next")
         if (next) router.push(next)
       }
-    } catch (e) {
-      toast.error("Error de red")
+    } catch (e: any) {
+      toast.error(e.message || "Error de red")
     }
     finally {
       setLoading(false)
