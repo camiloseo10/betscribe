@@ -1,102 +1,50 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
 import { contentIdeas } from '@/db/schema';
-import { eq, like, and, desc } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
+import { getUserBySessionToken } from "@/lib/auth"
 
 export async function GET(request: NextRequest) {
   try {
-    const searchParams = request.nextUrl.searchParams;
+    const token = request.cookies.get("session_token")?.value
+    const user = token ? await getUserBySessionToken(token) : null
+
+    const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
+    const configId = searchParams.get('configId');
+    const limit = searchParams.get('limit');
 
-    // Single record fetch by ID
     if (id) {
-      if (!id || isNaN(parseInt(id))) {
-        return NextResponse.json(
-          { 
-            error: 'ID válido es requerido',
-            code: 'INVALID_ID' 
-          },
-          { status: 400 }
-        );
+      const idNum = parseInt(id, 10);
+      const rows = await db.select().from(contentIdeas).where(eq(contentIdeas.id, idNum));
+      if (rows.length > 0 && user && rows[0].userId && rows[0].userId !== String(user.id)) {
+          return NextResponse.json({ error: "No autorizado" }, { status: 403 });
       }
-
-      const record = await db.select()
-        .from(contentIdeas)
-        .where(eq(contentIdeas.id, parseInt(id)))
-        .limit(1);
-
-      if (record.length === 0) {
-        return NextResponse.json(
-          { error: 'Ideas de contenido no encontradas' },
-          { status: 404 }
-        );
-      }
-
-      return NextResponse.json(record[0], { status: 200 });
+      return NextResponse.json(rows[0] || null);
     }
 
-    // List with pagination, search, and filters
-    const limit = Math.min(parseInt(searchParams.get('limit') ?? '50'), 100);
-    const offset = parseInt(searchParams.get('offset') ?? '0');
-    const search = searchParams.get('search');
-    const status = searchParams.get('status');
-    const configId = searchParams.get('config_id');
+    let query = db.select().from(contentIdeas);
 
-    // Validate status if provided
-    if (status && !['generating', 'completed', 'error'].includes(status)) {
-      return NextResponse.json(
-        { 
-          error: 'Estado inválido. Debe ser: generating, completed, o error',
-          code: 'INVALID_STATUS' 
-        },
-        { status: 400 }
-      );
-    }
-
-    // Validate configId if provided
-    if (configId && isNaN(parseInt(configId))) {
-      return NextResponse.json(
-        { 
-          error: 'ID de configuración inválido',
-          code: 'INVALID_CONFIG_ID' 
-        },
-        { status: 400 }
-      );
-    }
-
-    // Build query with filters
-    const conditions = [];
-
-    if (search) {
-      conditions.push(like(contentIdeas.topic, `%${search}%`));
-    }
-
-    if (status) {
-      conditions.push(eq(contentIdeas.status, status));
+    if (user) {
+        query = query.where(eq(contentIdeas.userId, String(user.id))) as any;
+    } else {
+        // If not logged in, return empty or handle as guest (but requirement says "each user sees their own info")
+        // Returning empty array if no user is safest for isolation
+        return NextResponse.json([]);
     }
 
     if (configId) {
-      conditions.push(eq(contentIdeas.configId, parseInt(configId)));
+      const configIdNumber = parseInt(configId, 10);
+      query = query.where(eq(contentIdeas.configId, configIdNumber)) as any;
     }
 
-    let query = db.select()
-      .from(contentIdeas)
-      .orderBy(desc(contentIdeas.createdAt))
-      .limit(limit)
-      .offset(offset);
-
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions));
-    }
-
-    const results = await query;
-
-    return NextResponse.json(results, { status: 200 });
-
+    // Apply limit at the end
+    const rows = await query;
+    return NextResponse.json(limit ? rows.slice(0, parseInt(limit, 10)) : rows);
   } catch (error) {
-    console.error('GET error:', error);
+    console.error('Error fetching content ideas:', error);
     return NextResponse.json(
-      { error: 'Error interno del servidor: ' + (error as Error).message },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }

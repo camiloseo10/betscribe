@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
 import { articles } from '@/db/schema';
 import { eq } from 'drizzle-orm';
+import { getUserBySessionToken } from "@/lib/auth"
 
 interface ArticleData {
   configId?: number;
@@ -54,24 +55,42 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
+    const token = request.cookies.get("session_token")?.value
+    const user = token ? await getUserBySessionToken(token) : null
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
-    const limitParam = searchParams.get('limit');
-    const limit = limitParam ? parseInt(limitParam, 10) : undefined;
+    const configId = searchParams.get('configId');
+    const limit = searchParams.get('limit');
+
     if (id) {
-      const rows = await db.select().from(articles).where(eq(articles.id, parseInt(id, 10))).limit(1);
-      if (rows.length === 0) return NextResponse.json({ error: 'Artículo no encontrado' }, { status: 404 });
-      return NextResponse.json({ success: true, article: rows[0] });
+      const idNum = parseInt(id, 10);
+      const rows = await db.select().from(articles).where(eq(articles.id, idNum));
+      if (rows.length > 0 && user && rows[0].userId && rows[0].userId !== String(user.id)) {
+          return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+      }
+      return NextResponse.json(rows[0] || null);
     }
-    const rows = await db.select().from(articles);
-    const ordered = rows.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    const list = limit ? ordered.slice(0, limit) : ordered;
-    return NextResponse.json({ success: true, articles: list, total: rows.length });
-    
+
+    let query = db.select().from(articles);
+
+    if (user) {
+        query = query.where(eq(articles.userId, String(user.id))) as any;
+    } else {
+        return NextResponse.json([]);
+    }
+
+    if (configId) {
+      const configIdNumber = parseInt(configId, 10);
+      query = query.where(eq(articles.configId, configIdNumber)) as any;
+    }
+
+    const rows = await query;
+    return NextResponse.json(limit ? rows.slice(0, parseInt(limit, 10)) : rows);
   } catch (error) {
-    console.error('Error obteniendo artículos:', error);
+    console.error('Error fetching articles:', error);
     return NextResponse.json(
-      { error: 'Error interno del servidor' },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }

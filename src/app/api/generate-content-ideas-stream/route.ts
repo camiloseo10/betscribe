@@ -113,7 +113,7 @@ import { getUserBySessionToken } from "@/lib/auth";
 
       // Free plan limit
       const { isFreeLimitReached, freeLimitMessage } = await import("@/lib/limits");
-      if (await isFreeLimitReached("ideas", finalConfigId)) {
+      if (user && await isFreeLimitReached("ideas", String(user.id))) {
         return new Response(
           encoder.encode(`data: ${JSON.stringify({ type: "error", error: freeLimitMessage("ideas"), code: "FREE_LIMIT_REACHED" })}\n\n`),
           { status: 402, headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive' } }
@@ -141,6 +141,7 @@ import { getUserBySessionToken } from "@/lib/auth";
       const now = new Date().toISOString();
       const newContentIdea = await db.insert(contentIdeas)
         .values({
+          userId: user ? String(user.id) : null,
           configId: finalConfigId || undefined,
           topic: topic.trim(),
           websiteUrl: websiteUrl || null,

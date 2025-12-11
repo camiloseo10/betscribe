@@ -24,6 +24,7 @@ export const aiConfigurations = sqliteTable('ai_configurations', {
 
 export const articles = sqliteTable('articles', {
   id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: text('user_id'),
   configId: integer('config_id').references(() => aiConfigurations.id),
   title: text('title').notNull(),
   keyword: text('keyword').notNull(),
@@ -40,6 +41,7 @@ export const articles = sqliteTable('articles', {
 
 export const contentIdeas = sqliteTable('content_ideas', {
   id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: text('user_id'),
   configId: integer('config_id').references(() => aiConfigurations.id),
   topic: text('topic').notNull(),
   websiteUrl: text('website_url'),
@@ -53,6 +55,7 @@ export const contentIdeas = sqliteTable('content_ideas', {
 
 export const seoStructures = sqliteTable('seo_structures', {
   id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: text('user_id'),
   configId: integer('config_id').references(() => aiConfigurations.id),
   keyword: text('keyword').notNull(),
   websiteUrl: text('website_url').default(''),
@@ -67,6 +70,7 @@ export const seoStructures = sqliteTable('seo_structures', {
 
 export const reviews = sqliteTable('reviews', {
   id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: text('user_id'),
   configId: integer('config_id').references(() => aiConfigurations.id),
   platformName: text('platform_name').notNull(),
   platformType: text('platform_type').notNull(),

@@ -151,7 +151,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Free plan limit check
-    if (await isFreeLimitReached("articles", finalConfigId)) {
+    if (user && await isFreeLimitReached("articles", String(user.id))) {
       return new Response(JSON.stringify({ error: freeLimitMessage("articles"), code: "FREE_LIMIT_REACHED" }), { status: 402, headers: { "Content-Type": "application/json" } });
     }
 
@@ -160,6 +160,7 @@ export async function POST(req: NextRequest) {
     const newArticle = await db
       .insert(articles)
       .values({
+        userId: user ? String(user.id) : null,
         configId: finalConfigId,
         title,
         keyword,

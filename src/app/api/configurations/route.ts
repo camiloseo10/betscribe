@@ -68,10 +68,16 @@ export async function POST(request: NextRequest) {
     } = body
 
     if (!name || !businessName) {
-        return NextResponse.json({ error: "Faltan campos requeridos" }, { status: 400 })
-    }
+         return NextResponse.json({ error: "Faltan campos requeridos" }, { status: 400 })
+     }
 
-    // Handle isDefault logic: if this is set to default, unset others
+     // Limit check
+     const { isFreeLimitReached, freeLimitMessage } = await import("@/lib/limits");
+     if (await isFreeLimitReached("profiles", String(user.id))) {
+        return NextResponse.json({ error: freeLimitMessage("profiles"), code: "FREE_LIMIT_REACHED" }, { status: 402 })
+     }
+
+     // Handle isDefault logic: if this is set to default, unset others
     if (isDefault) {
         await db.update(aiConfigurations)
             .set({ isDefault: false })

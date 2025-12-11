@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { isFreeLimitReached, freeLimitMessage } = await import("@/lib/limits");
-    if (await isFreeLimitReached("structures", finalConfigId)) {
+    if (user && await isFreeLimitReached("structures", String(user.id))) {
       return new Response(
         encoder.encode(`data: ${JSON.stringify({ type: "error", error: freeLimitMessage("structures"), code: "FREE_LIMIT_REACHED" })}\n\n`),
         { status: 402, headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive' } }
@@ -151,11 +151,12 @@ export async function POST(request: NextRequest) {
 
     const insertSql = `
       INSERT INTO seo_structures (
-        config_id, keyword, language, structure, html_content, status, error_message, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+        user_id, config_id, keyword, language, structure, html_content, status, error_message, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
     `;
 
     const insertArgs = [
+      (user ? String(user.id) : null),
       finalConfigId,
       keyword.trim(),
       language || 'es',

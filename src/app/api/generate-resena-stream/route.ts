@@ -5,6 +5,7 @@ import { aiConfigurations, reviews } from "@/db/schema"
 import { eq } from "drizzle-orm"
 import { extractMetadata, countWords, buildResenaPrompt } from "@/lib/promt_builder_reseñas"
 import { getUserBySessionToken } from "@/lib/auth"
+import { isFreeLimitReached, freeLimitMessage } from "@/lib/limits"
 
 function sanitizeMessage(message?: string): string {
   if (!message) return "Error inesperado"
@@ -56,6 +57,18 @@ export async function POST(request: NextRequest) {
            console.error("Error finding user configuration:", e)
          }
      }
+
+     if (user && await isFreeLimitReached("reviews", String(user.id))) {
+        return new Response(
+          new ReadableStream({
+            start(controller) {
+              controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({ type: "error", error: freeLimitMessage("reviews"), code: "FREE_LIMIT_REACHED" })}\n\n`))
+              controller.close()
+            },
+          }),
+          { status: 402, headers: { "Content-Type": "text/event-stream" } }
+        )
+     }
  
      if (!geminiClient) {
       return new Response(
@@ -103,6 +116,7 @@ export async function POST(request: NextRequest) {
     let reviewId: number | null = null
     if (hasDb) {
       const inserted = await db.insert(reviews).values({
+        userId: user ? String(user.id) : null,
         configId: finalConfigId,
         platformName: nombrePlataforma,
         platformType: tipoPlataforma,
