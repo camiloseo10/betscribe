@@ -96,3 +96,14 @@ export const sessions = sqliteTable('sessions', {
   createdAt: text('created_at').notNull(),
   expiresAt: text('expires_at').notNull(),
 });
+
+export const emailVerifications = sqliteTable('email_verifications', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  email: text('email').notNull(),
+  code: text('code').notNull(),
+  name: text('name'),
+  passwordHash: text('password_hash'),
+  createdAt: text('created_at').notNull(),
+  expiresAt: text('expires_at').notNull(),
+  verified: integer('verified', { mode: 'boolean' }).default(false),
+});

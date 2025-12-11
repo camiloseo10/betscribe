@@ -1,10 +1,13 @@
 import { randomBytes, pbkdf2Sync } from "crypto"
 import { resolveMx } from "dns/promises"
-import { randomBytes as rb } from "crypto"
+import "./env-loader" // Load env.txt if present (Node.js only)
 import { db } from "@/db"
 import { users, sessions } from "@/db/schema"
 import { eq } from "drizzle-orm"
+import { ensureAuthTables } from "./session"
 import { createClient } from "@libsql/client"
+
+export { ensureAuthTables, getUserBySessionToken } from "./session"
 
 const ITERATIONS = 100_000
 const KEYLEN = 32
@@ -23,12 +26,14 @@ export function verifyPassword(password: string, stored: string) {
 }
 
 export async function findUserByEmail(email: string) {
+  if (!db) throw new Error("Database connection failed")
   await ensureAuthTables()
   const rows = await db.select().from(users).where(eq(users.email, email)).limit(1)
   return rows[0] || null
 }
 
 export async function createUser(email: string, name: string, passwordHash: string) {
+  if (!db) throw new Error("Database connection failed")
   await ensureAuthTables()
   const now = new Date().toISOString()
   const res = await db.insert(users).values({ email, name, passwordHash, createdAt: now, updatedAt: now }).returning()
@@ -36,6 +41,7 @@ export async function createUser(email: string, name: string, passwordHash: stri
 }
 
 export async function createSession(userId: number, ttlHours = 72) {
+  if (!db) throw new Error("Database connection failed")
   await ensureAuthTables()
   const token = randomBytes(32).toString("hex")
   const now = new Date()
@@ -44,18 +50,8 @@ export async function createSession(userId: number, ttlHours = 72) {
   return { token, session: res[0] }
 }
 
-export async function getUserBySessionToken(token: string) {
-  await ensureAuthTables()
-  const rows = await db.select().from(sessions).where(eq(sessions.token, token)).limit(1)
-  const sess = rows[0]
-  if (!sess) return null
-  const exp = new Date(sess.expiresAt)
-  if (exp.getTime() < Date.now()) return null
-  const u = await db.select().from(users).where(eq(users.id, sess.userId!)).limit(1)
-  return u[0] || null
-}
-
 export async function deleteSessionByToken(token: string) {
+  if (!db) return
   await ensureAuthTables()
   await db.delete(sessions).where(eq(sessions.token, token))
 }
@@ -82,47 +78,7 @@ export async function isAllowedEmail(email: string) {
 }
 
 export function generateVerificationCode() {
-  return rb(3).toString("hex").slice(0,6).toUpperCase()
-}
-
-
-export async function ensureAuthTables() {
-  const url = process.env.BETSCRIBE_DB_URL || process.env.DATABASE_URL || process.env.TURSO_CONNECTION_URL
-  const authToken = process.env.BETSCRIBE_DB_TOKEN || process.env.DATABASE_TOKEN || process.env.TURSO_AUTH_TOKEN
-  if (!url || !authToken) return
-  const raw = createClient({ url, authToken })
-  await raw.execute(`
-    CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      email TEXT NOT NULL,
-      name TEXT NOT NULL,
-      password_hash TEXT NOT NULL,
-      created_at TEXT NOT NULL,
-      updated_at TEXT NOT NULL
-    );
-  `)
-  await raw.execute(`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON users(email);`)
-  await raw.execute(`
-    CREATE TABLE IF NOT EXISTS sessions (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER,
-      token TEXT NOT NULL,
-      created_at TEXT NOT NULL,
-      expires_at TEXT NOT NULL
-    );
-  `)
-  await raw.execute(`CREATE UNIQUE INDEX IF NOT EXISTS idx_sessions_token ON sessions(token);`)
-  await raw.execute(`
-    CREATE TABLE IF NOT EXISTS email_verifications (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      email TEXT NOT NULL,
-      code TEXT NOT NULL,
-      created_at TEXT NOT NULL,
-      expires_at TEXT NOT NULL,
-      verified INTEGER DEFAULT 0
-    );
-  `)
-  await raw.execute(`CREATE INDEX IF NOT EXISTS idx_email_verifications_email ON email_verifications(email);`)
+  return randomBytes(3).toString("hex").slice(0,6).toUpperCase()
 }
 
 function getRawClient() {
@@ -132,12 +88,15 @@ function getRawClient() {
   return createClient({ url, authToken })
 }
 
-export async function saveVerification(email: string, code: string, expiresAtISO: string) {
+export async function saveVerification(email: string, code: string, expiresAtISO: string, name?: string, passwordHash?: string) {
   await ensureAuthTables()
   const raw = getRawClient()
   if (!raw) return false
   await raw.execute({ sql: "DELETE FROM email_verifications WHERE email = ?", args: [email] })
-  await raw.execute({ sql: "INSERT INTO email_verifications (email, code, created_at, expires_at, verified) VALUES (?, ?, ?, ?, 0)", args: [email, code, new Date().toISOString(), expiresAtISO] })
+  await raw.execute({ 
+    sql: "INSERT INTO email_verifications (email, code, name, password_hash, created_at, expires_at, verified) VALUES (?, ?, ?, ?, ?, ?, 0)", 
+    args: [email, code, name || null, passwordHash || null, new Date().toISOString(), expiresAtISO] 
+  })
   return true
 }
 
@@ -145,8 +104,19 @@ export async function latestVerification(email: string) {
   await ensureAuthTables()
   const raw = getRawClient()
   if (!raw) return null
-  const res = await raw.execute({ sql: "SELECT code, expires_at, verified FROM email_verifications WHERE email = ? ORDER BY created_at DESC LIMIT 1", args: [email] })
+  const res = await raw.execute({ sql: "SELECT code, expires_at, verified, name, password_hash FROM email_verifications WHERE email = ? ORDER BY created_at DESC LIMIT 1", args: [email] })
   return (res.rows?.[0] as any) || null
+}
+
+export async function completeRegistration(email: string) {
+  const ver = await latestVerification(email)
+  if (!ver || !ver.name || !ver.password_hash) return null
+  
+  // Check if user already exists to avoid duplicates
+  const existing = await findUserByEmail(email)
+  if (existing) return existing
+
+  return await createUser(email, ver.name, ver.password_hash)
 }
 
 export async function markVerified(email: string) {

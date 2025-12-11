@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getUserBySessionToken } from "@/lib/auth"
+import { getUserBySessionToken } from "@/lib/session"
 
 function isProtectedPage(pathname: string) {
   const p = decodeURI(pathname || "/")

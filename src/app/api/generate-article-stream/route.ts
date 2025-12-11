@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import "@/lib/env-loader";
 import { geminiClient, MODEL_ID, genaiPool } from "@/lib/gemini";
 import { buildArticlePrompt, extractMetadata, countWords } from "@/lib/prompt-builder";
 import { db } from "@/db";

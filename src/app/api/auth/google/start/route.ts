@@ -1,29 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import crypto from "crypto"
-import fs from "fs"
-import path from "path"
-
-function loadEnvTxt() {
-  try {
-    const paths = [path.join(process.cwd(), "env.txt"), path.join(process.cwd(), ".env.txt")]
-    const envPath = paths.find((p) => fs.existsSync(p))
-    if (envPath) {
-      const content = fs.readFileSync(envPath, "utf8")
-      for (const line of content.split(/\r?\n/)) {
-        const t = line.trim()
-        if (!t || t.startsWith("#")) continue
-        const i = t.indexOf("=")
-        if (i > 0) {
-          const k = t.slice(0, i).trim()
-          const v = t.slice(i + 1).trim()
-          if (k && !(k in process.env)) process.env[k] = v
-        }
-      }
-    }
-  } catch {}
-}
-
-loadEnvTxt()
+import "@/lib/env-loader"
 
 export async function GET(req: NextRequest) {
   const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID || process.env.GOOGLE_CLIENT_ID

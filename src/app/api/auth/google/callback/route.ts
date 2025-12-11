@@ -1,29 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import fs from "fs"
-import path from "path"
 import { findUserByEmail, createUser, createSession, isAllowedEmail } from "@/lib/auth"
-
-function loadEnvTxt() {
-  try {
-    const paths = [path.join(process.cwd(), "env.txt"), path.join(process.cwd(), ".env.txt")]
-    const envPath = paths.find((p) => fs.existsSync(p))
-    if (envPath) {
-      const content = fs.readFileSync(envPath, "utf8")
-      for (const line of content.split(/\r?\n/)) {
-        const t = line.trim()
-        if (!t || t.startsWith("#")) continue
-        const i = t.indexOf("=")
-        if (i > 0) {
-          const k = t.slice(0, i).trim()
-          const v = t.slice(i + 1).trim()
-          if (k && !(k in process.env)) process.env[k] = v
-        }
-      }
-    }
-  } catch {}
-}
-
-loadEnvTxt()
+import "@/lib/env-loader"
 
 export async function GET(req: NextRequest) {
   try {
@@ -94,7 +71,8 @@ export async function GET(req: NextRequest) {
     res.cookies.set("oauth_state", "", { path: "/", maxAge: 0 })
     res.cookies.set("oauth_next", "", { path: "/", maxAge: 0 })
     return res
-  } catch {
-    return NextResponse.redirect(`${req.nextUrl.origin}/cuenta`)
+  } catch (e: any) {
+    console.error("Google Auth Callback Error:", e)
+    return NextResponse.redirect(`${req.nextUrl.origin}/cuenta?error=auth_failed`)
   }
 }
