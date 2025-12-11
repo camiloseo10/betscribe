@@ -141,7 +141,7 @@ import { getUserBySessionToken } from "@/lib/auth";
       const now = new Date().toISOString();
       const newContentIdea = await db.insert(contentIdeas)
         .values({
-          configId: finalConfigId,
+          configId: finalConfigId || undefined,
           topic: topic.trim(),
           websiteUrl: websiteUrl || null,
           language,

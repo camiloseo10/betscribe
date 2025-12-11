@@ -5,7 +5,7 @@ const apiKey = process.env.BETSCRIBE_GEMINI_API_KEY || process.env.GOOGLE_GEMINI
 
 export const geminiClient: GoogleGenAI | null = apiKey ? new GoogleGenAI({ apiKey }) : null;
 
-export const MODEL_ID = process.env.GENAI_MODEL_ID || "gemini-2.0-flash";
+export const MODEL_ID = process.env.GENAI_MODEL_ID || "gemini-1.5-flash";
 
 export interface GenerationConfig {
   temperature?: number;
