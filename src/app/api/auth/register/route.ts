@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { hashPassword, findUserByEmail, createUser, isAllowedEmail, generateVerificationCode, saveVerification } from "@/lib/auth"
 import { sendVerificationEmail } from "@/lib/mailer"
 
+export const dynamic = 'force-dynamic'
+
 export async function OPTIONS() {
   return new NextResponse(null, {
     status: 200,
@@ -11,6 +13,10 @@ export async function OPTIONS() {
       "Access-Control-Allow-Headers": "Content-Type, Authorization",
     },
   })
+}
+
+export async function GET() {
+  return NextResponse.json({ error: "Method GET not allowed. Use POST." }, { status: 405 })
 }
 
 export async function POST(req: NextRequest) {
