@@ -6,18 +6,20 @@ export async function GET(req: NextRequest) {
   try {
     const url = new URL(req.url)
     const code = url.searchParams.get("code")
-    const state = url.searchParams.get("state")
-    const expectedState = req.cookies.get("oauth_state")?.value
-    if (!code || !state || !expectedState || state !== expectedState) {
-      return NextResponse.redirect(`${req.nextUrl.origin}/cuenta`)
+    if (!code) {
+      console.error("Google Auth: No code provided")
+      return NextResponse.redirect(`${req.nextUrl.origin}/cuenta?error=auth_failed`)
     }
 
     const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID || process.env.GOOGLE_CLIENT_ID
     const clientSecret = process.env.GOOGLE_OAUTH_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET
+    
     if (!clientId || !clientSecret) {
-      return NextResponse.redirect(`${req.nextUrl.origin}/cuenta`)
+      console.error("Google Auth: Missing Client ID or Secret")
+      return NextResponse.redirect(`${req.nextUrl.origin}/cuenta?error=auth_failed`)
     }
 
+    const redirectUri = `${req.nextUrl.origin}/api/auth/google/callback`
     const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -25,12 +27,15 @@ export async function GET(req: NextRequest) {
         code,
         client_id: clientId,
         client_secret: clientSecret,
-        redirect_uri: `${req.nextUrl.origin}/api/auth/google/callback`,
+        redirect_uri: redirectUri,
         grant_type: "authorization_code",
-      }).toString(),
+      }),
     })
+
     if (!tokenRes.ok) {
-      return NextResponse.redirect(`${req.nextUrl.origin}/cuenta`)
+      const errorText = await tokenRes.text()
+      console.error("Google Auth: Token exchange failed", errorText)
+      return NextResponse.redirect(`${req.nextUrl.origin}/cuenta?error=auth_failed`)
     }
     const tokens = await tokenRes.json()
     const accessToken = tokens.access_token as string

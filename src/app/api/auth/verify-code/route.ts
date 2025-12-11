@@ -5,10 +5,17 @@ export async function POST(req: NextRequest) {
   try {
     const { email, code } = await req.json()
     if (!email || !code) return NextResponse.json({ error: "email y código requeridos" }, { status: 400 })
+    
+    const cleanCode = String(code).trim().toUpperCase()
     const row = await latestVerification(email)
-    if (!row) return NextResponse.json({ error: "Código no encontrado" }, { status: 404 })
+    
+    if (!row) return NextResponse.json({ error: "Código no encontrado. Solicita uno nuevo." }, { status: 404 })
     if (new Date(row.expires_at).getTime() < Date.now()) return NextResponse.json({ error: "Código expirado" }, { status: 400 })
-    if (String(row.code).toUpperCase() !== String(code).toUpperCase()) return NextResponse.json({ error: "Código inválido" }, { status: 400 })
+    
+    if (String(row.code).toUpperCase() !== cleanCode) {
+      console.log(`Code mismatch for ${email}. Expected: ${row.code}, Got: ${cleanCode}`)
+      return NextResponse.json({ error: "Código inválido" }, { status: 400 })
+    }
     
     let user = await findUserByEmail(email)
     if (!user) {
