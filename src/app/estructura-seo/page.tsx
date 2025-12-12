@@ -219,8 +219,11 @@ export default function EstructuraSeoPage() {
     } catch (error: any) {
       console.error("Streaming error:", error)
       toast.dismiss(loadingToast)
-      toast.error("Error al generar la estructura SEO", {
-        description: "Por favor intenta de nuevo"
+      
+      const isLimitError = error.message && (error.message.includes("límite") || error.message.includes("Plan gratuito"));
+      
+      toast.error(isLimitError ? "Límite alcanzado" : "Error al generar la estructura SEO", {
+        description: error.message || "Por favor intenta de nuevo"
       })
     } finally {
       setStreaming(false)

@@ -245,8 +245,12 @@ export default function GenerarPage() {
     } catch (error: any) {
       console.error("Streaming error:", error)
       toast.dismiss(loadingToast)
-      toast.error("Error al generar el artículo", {
-        description: "Por favor intenta de nuevo"
+      
+      // If it's a limit error (contains "límite" or code 402 related text), show it clearly
+      const isLimitError = error.message && (error.message.includes("límite") || error.message.includes("Plan gratuito"));
+      
+      toast.error(isLimitError ? "Límite alcanzado" : "Error al generar el artículo", {
+        description: error.message || "Por favor intenta de nuevo"
       })
     } finally {
       setStreaming(false)

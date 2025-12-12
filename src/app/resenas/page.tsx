@@ -207,7 +207,12 @@ export default function ResenasPage() {
       }
     } catch (error: any) {
       toast.dismiss(loadingToast)
-      toast.error("Error al generar la reseña")
+      
+      const isLimitError = error.message && (error.message.includes("límite") || error.message.includes("Plan gratuito"));
+      
+      toast.error(isLimitError ? "Límite alcanzado" : "Error al generar la reseña", {
+        description: error.message || undefined
+      })
     } finally {
       setStreaming(false)
       setRetrying(false)

@@ -220,8 +220,11 @@ export default function IdeasContenidoPage() {
     } catch (error: any) {
       console.error("Streaming error:", error)
       toast.dismiss(loadingToast)
-      toast.error("Error al generar ideas de contenido", {
-        description: "Por favor intenta de nuevo"
+      
+      const isLimitError = error.message && (error.message.includes("límite") || error.message.includes("Plan gratuito"));
+      
+      toast.error(isLimitError ? "Límite alcanzado" : "Error al generar ideas de contenido", {
+        description: error.message || "Por favor intenta de nuevo"
       })
     } finally {
       setStreaming(false)
