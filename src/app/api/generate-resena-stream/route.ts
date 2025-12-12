@@ -30,7 +30,35 @@ function formatApiError(error: any): string {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { configId: initialConfigId, nombrePlataforma, tipoPlataforma, mercadoObjetivo, language, wordCount } = body
+    const {
+      configId: initialConfigId,
+      nombrePlataforma,
+      tipoPlataforma,
+      mercadoObjetivo,
+      secondaryUserCriterion,
+      rating,
+      mainLicense,
+      foundationYear,
+      mobileApp,
+      averageWithdrawalTime,
+      support247,
+      sportsVariety,
+      strongMarkets,
+      casinoGamesCount,
+      mainProvider,
+      featuredGame,
+      welcomeOfferType,
+      rolloverRequirement,
+      additionalPromotionsCount,
+      popularPaymentMethod1,
+      popularPaymentMethod2,
+      uniqueCompetitiveAdvantage,
+      experienceLevel,
+      desiredTone,
+      mainFocus,
+      language,
+      wordCount,
+    } = body
 
     if (!nombrePlataforma || !tipoPlataforma || !mercadoObjetivo) {
       return NextResponse.json({ error: "Campos obligatorios faltantes" }, { status: 400 })
@@ -105,7 +133,6 @@ export async function POST(request: NextRequest) {
       uniqueValue: "análisis honesto y responsable",
       tone: JSON.stringify(["conversacional", "natural"]),
       desiredAction: "registrarse en operador regulado",
-      wordCount: wordCount || 3000,
       localKnowledge: null,
       language: language || "es",
     }
@@ -134,12 +161,34 @@ export async function POST(request: NextRequest) {
 
     
 
-    const prompt = buildResenaPrompt(usedConfig, {
+    const prompt = buildResenaPrompt({
       nombrePlataforma,
       tipoPlataforma,
       mercadoObjetivo,
+      secondaryUserCriterion,
+      rating,
+      mainLicense,
+      foundationYear,
+      mobileApp,
+      averageWithdrawalTime,
+      support247,
+      sportsVariety,
+      strongMarkets,
+      casinoGamesCount,
+      mainProvider,
+      featuredGame,
+      welcomeOfferType,
+      rolloverRequirement,
+      additionalPromotionsCount,
+      popularPaymentMethod1,
+      popularPaymentMethod2,
+      uniqueCompetitiveAdvantage,
+      experienceLevel,
+      desiredTone,
+      mainFocus,
       selectedLanguage: language,
-    })
+      wordCount,
+    });
 
     const release = await genaiPool.acquire()
     try {

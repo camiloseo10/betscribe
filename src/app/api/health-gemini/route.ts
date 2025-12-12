@@ -10,13 +10,15 @@ export async function GET() {
       return NextResponse.json({ status: "error", message: "Gemini client not initialized (missing API Key)" }, { status: 500 })
     }
 
+    // Usando la sintaxis del nuevo SDK @google/genai
     const response = await geminiClient.models.generateContent({
       model: MODEL_ID,
-      contents: [{ role: "user", parts: [{ text: "Hello" }] }],
+      contents: "Hello",
     });
 
-    // Handle different response structures from new SDK
-    const text = response.response?.text() || JSON.stringify(response);
+    // CORRECCIÓN AQUÍ:
+    // 'text' es un getter (propiedad), no una función. Se usa sin paréntesis.
+    const text = response.text; 
 
     return NextResponse.json({ 
       status: "ok", 
@@ -25,6 +27,7 @@ export async function GET() {
       response: text
     })
   } catch (e: any) {
+    console.error("Gemini Error:", e);
     return NextResponse.json({ 
       status: "error", 
       message: e.message, 
