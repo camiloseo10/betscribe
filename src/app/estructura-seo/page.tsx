@@ -149,6 +149,11 @@ export default function EstructuraSeoPage() {
         }),
       })
 
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: "Error desconocido" }))
+        throw new Error(errorData.error || `Error ${response.status}`)
+      }
+
       if (!response.body) {
         throw new Error("No response body")
       }

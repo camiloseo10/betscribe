@@ -86,7 +86,14 @@ export async function GET(request: NextRequest) {
     }
 
     const rows = await query;
-    return NextResponse.json(limit ? rows.slice(0, parseInt(limit, 10)) : rows);
+    const ordered = rows.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    const list = limit ? ordered.slice(0, parseInt(limit, 10)) : ordered;
+    
+    return NextResponse.json({ 
+        success: true, 
+        articles: list, 
+        total: rows.length 
+    });
   } catch (error) {
     console.error('Error fetching articles:', error);
     return NextResponse.json(

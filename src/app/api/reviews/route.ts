@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
     }
 
     const rows = await query;
-    return NextResponse.json(limit ? rows.slice(0, parseInt(limit, 10)) : rows);
+    return NextResponse.json({ reviews: limit ? rows.slice(0, parseInt(limit, 10)) : rows });
   } catch (error) {
     console.error('Error fetching reviews:', error);
     return NextResponse.json(
