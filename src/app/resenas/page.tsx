@@ -571,8 +571,12 @@ export default function ResenasPage() {
                             <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                             <SelectContent>
                               <SelectItem value="es">Español</SelectItem>
+                              <SelectItem value="es-neutral">Español (Neutro)</SelectItem>
                               <SelectItem value="en">Inglés</SelectItem>
                               <SelectItem value="pt">Portugués</SelectItem>
+                              <SelectItem value="fr">Francés</SelectItem>
+                              <SelectItem value="de">Alemán</SelectItem>
+                              <SelectItem value="it">Italiano</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
