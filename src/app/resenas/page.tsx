@@ -322,8 +322,8 @@ export default function ResenasPage() {
               
               // Wrap tables for horizontal scrolling
               cleanHtml = cleanHtml.replace(
-                /(<table[^>]*>[\s\S]*?<\/table>)/gi, 
-                '<div class="overflow-x-auto my-6 border border-border rounded-lg">$1</div>'
+                /(<table[^>]*>[\s\S]*?<\/table>)/gi,
+                '<div class="overflow-x-auto my-6 border border-border rounded-lg [&_table]:w-auto">$1</div>'
               );
               
               setRenderedHtml(cleanHtml);
@@ -410,8 +410,8 @@ export default function ResenasPage() {
     let cleanHtml = DOMPurify.sanitize(meta.cleanContent, { USE_PROFILES: { html: true } });
     // Wrap tables for horizontal scrolling
     cleanHtml = cleanHtml.replace(
-      /(<table[^>]*>[\s\S]*?<\/table>)/gi, 
-      '<div class="overflow-x-auto my-6 border border-border rounded-lg">$1</div>'
+      /(<table[^>]*>[\s\S]*?<\/table>)/gi,
+      '<div class="overflow-x-auto my-6 border border-border rounded-lg [&_table]:w-auto">$1</div>'
     );
     
     setRenderedHtml(cleanHtml);
