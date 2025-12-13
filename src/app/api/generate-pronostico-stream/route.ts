@@ -45,7 +45,16 @@ export async function POST(request: NextRequest) {
     }
 
     const token = request.cookies.get("session_token")?.value
-    const user = token ? await getUserBySessionToken(token) : null
+    let user = null
+    try {
+      user = token ? await getUserBySessionToken(token) : null
+    } catch (e) {
+      console.error("Error fetching user session:", e)
+      // If DB is down, we can't verify user. 
+      // Option 1: Fail. Option 2: Allow guest access (if appropriate).
+      // Given requirements, we fail but with a clearer message.
+      return NextResponse.json({ error: "Error verificando sesión. Intenta más tarde." }, { status: 503 })
+    }
 
     if (!user) {
       return NextResponse.json({ error: "Debes iniciar sesión para usar esta funcionalidad" }, { status: 401 })
@@ -62,8 +71,11 @@ export async function POST(request: NextRequest) {
     if (hasDb) {
       try {
         console.log("Attempting to insert pronostico for user:", user?.id)
+        // Ensure userId is string
+        const userIdStr = user && user.id ? String(user.id) : null;
+        
         const inserted = await db.insert(pronosticos).values({
-          userId: user ? String(user.id) : null,
+          userId: userIdStr,
           evento,
           liga,
           mercado,
