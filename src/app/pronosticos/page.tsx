@@ -175,7 +175,8 @@ export default function PronosticosPage() {
       }
     } catch (e: any) {
       toast.dismiss(loadingToast)
-      toast.error("Error al generar el pronóstico")
+      console.error("Error en handleGenerate:", e)
+      toast.error(e.message || "Error al generar el pronóstico")
     } finally {
       setStreaming(false)
       setRetrying(false)
