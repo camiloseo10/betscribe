@@ -125,6 +125,16 @@ export default function PronosticosPage() {
         }),
       })
 
+      if (!response.ok) {
+        if (response.status === 401) {
+           toast.error("Debes iniciar sesión para generar pronósticos")
+           // Optional: redirect to login
+           return
+        }
+        const errorData = await response.json().catch(() => ({ error: "Error desconocido" }))
+        throw new Error(errorData.error || `Error ${response.status}`)
+      }
+
       if (!response.body) throw new Error("No response body")
       const reader = response.body.getReader()
       const decoder = new TextDecoder()

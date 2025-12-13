@@ -9,6 +9,10 @@ export async function GET(request: NextRequest) {
     const token = request.cookies.get("session_token")?.value
     const user = token ? await getUserBySessionToken(token) : null
 
+    if (!user) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+    }
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
     const limit = searchParams.get('limit');
@@ -29,11 +33,7 @@ export async function GET(request: NextRequest) {
 
     let query = db.select().from(pronosticos).orderBy(desc(pronosticos.createdAt));
 
-    if (user) {
-        query = query.where(eq(pronosticos.userId, String(user.id))) as any;
-    } else {
-        return NextResponse.json([]);
-    }
+    query = query.where(eq(pronosticos.userId, String(user.id))) as any;
 
     const rows = await query;
     return NextResponse.json({ pronosticos: limit ? rows.slice(0, parseInt(limit, 10)) : rows });

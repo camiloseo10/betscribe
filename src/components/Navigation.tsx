@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Menu, X, Moon, Sun, Sparkles, Settings, Lightbulb, ListTree } from "lucide-react"
+import { Menu, X, Moon, Sun, Sparkles, Settings, Lightbulb, ListTree, TrendingUp } from "lucide-react"
 import { useRouter, usePathname } from "next/navigation"
 import Image from "next/image"
 
@@ -112,6 +112,14 @@ export default function Navigation() {
                 className="gap-2"
               >
                 Reseñas
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => navigateProtected("/pronosticos")}
+                className="gap-2"
+              >
+                <TrendingUp className="w-4 h-4" />
+                Pronósticos
               </Button>
               <Button
                 variant="ghost"
@@ -257,6 +265,17 @@ export default function Navigation() {
                   }}
                 >
                   Reseñas
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start gap-2"
+                  onClick={() => {
+                    navigateProtected("/pronosticos")
+                    setIsOpen(false)
+                  }}
+                >
+                  <TrendingUp className="w-4 h-4" />
+                  Pronósticos
                 </Button>
                 <Button
                   variant="ghost"

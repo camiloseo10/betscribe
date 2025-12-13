@@ -46,6 +46,11 @@ export async function POST(request: NextRequest) {
 
     const token = request.cookies.get("session_token")?.value
     const user = token ? await getUserBySessionToken(token) : null
+
+    if (!user) {
+      return NextResponse.json({ error: "Debes iniciar sesión para usar esta funcionalidad" }, { status: 401 })
+    }
+
     const hasDb = db && typeof (db as any).select === 'function'
 
     const now = new Date().toISOString()
