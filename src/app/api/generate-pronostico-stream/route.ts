@@ -82,7 +82,8 @@ export async function POST(request: NextRequest) {
         console.log("Pronostico inserted with ID:", pronosticoId)
       } catch (e) {
         console.error("Error creating pronostico record:", e)
-        // Continue generation even if DB save fails
+        // If the table doesn't exist or DB fails, we MUST continue without saving
+        // to avoid blocking the user experience.
       }
     }
 
@@ -209,6 +210,7 @@ export async function POST(request: NextRequest) {
       release()
     }
   } catch (error: any) {
+    console.error("Critical error in generate-pronostico-stream:", error)
     return NextResponse.json({ error: formatApiError(error) }, { status: 500 })
   }
 }
