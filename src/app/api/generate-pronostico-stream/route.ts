@@ -57,23 +57,28 @@ export async function POST(request: NextRequest) {
     let pronosticoId: number | null = null
 
     if (hasDb) {
-      const inserted = await db.insert(pronosticos).values({
-        userId: user ? String(user.id) : null,
-        evento,
-        liga,
-        mercado,
-        cuota,
-        enfoque,
-        language: language || "es",
-        content: "",
-        seoTitle: "",
-        metaDescription: "",
-        wordCount: 0,
-        status: "generating",
-        createdAt: now,
-        updatedAt: now,
-      }).returning()
-      pronosticoId = inserted[0].id
+      try {
+        const inserted = await db.insert(pronosticos).values({
+          userId: user ? String(user.id) : null,
+          evento,
+          liga,
+          mercado,
+          cuota,
+          enfoque,
+          language: language || "es",
+          content: "",
+          seoTitle: "",
+          metaDescription: "",
+          wordCount: 0,
+          status: "generating",
+          createdAt: now,
+          updatedAt: now,
+        }).returning()
+        pronosticoId = inserted[0].id
+      } catch (e) {
+        console.error("Error creating pronostico record:", e)
+        // Continue generation even if DB save fails
+      }
     }
 
     const prompt = buildPronosticoPrompt({
@@ -152,16 +157,20 @@ export async function POST(request: NextRequest) {
             const words = countWords(full)
 
             if (hasDb && pronosticoId != null) {
-              await db.update(pronosticos)
-                .set({
-                  content: full,
-                  seoTitle: meta.seoTitle,
-                  metaDescription: meta.metaDescription,
-                  wordCount: words,
-                  status: "completed",
-                  updatedAt: new Date().toISOString(),
-                })
-                .where(eq(pronosticos.id, pronosticoId))
+              try {
+                await db.update(pronosticos)
+                  .set({
+                    content: full,
+                    seoTitle: meta.seoTitle,
+                    metaDescription: meta.metaDescription,
+                    wordCount: words,
+                    status: "completed",
+                    updatedAt: new Date().toISOString(),
+                  })
+                  .where(eq(pronosticos.id, pronosticoId))
+              } catch (e) {
+                console.error("Error updating pronostico record:", e)
+              }
             }
 
             controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "complete", seoTitle: meta.seoTitle, metaDescription: meta.metaDescription, wordCount: words })}\n\n`))
@@ -169,9 +178,13 @@ export async function POST(request: NextRequest) {
           } catch (error: any) {
             const friendly = formatApiError(error)
             if (hasDb && pronosticoId != null) {
-              await db.update(pronosticos)
-                .set({ status: "error", errorMessage: friendly, updatedAt: new Date().toISOString() })
-                .where(eq(pronosticos.id, pronosticoId))
+              try {
+                await db.update(pronosticos)
+                  .set({ status: "error", errorMessage: friendly, updatedAt: new Date().toISOString() })
+                  .where(eq(pronosticos.id, pronosticoId))
+              } catch (e) {
+                console.error("Error logging error to DB:", e)
+              }
             }
             controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "error", error: friendly })}\n\n`))
             controller.close()
