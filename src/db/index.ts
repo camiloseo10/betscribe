@@ -35,7 +35,12 @@ if (!url) {
     'DB configuration missing: set BETSCRIBE_DB_TOKEN or TURSO_AUTH_TOKEN in environment.'
   );
 } else {
-  client = createClient({ url, authToken });
+  try {
+    client = createClient({ url, authToken });
+  } catch (e) {
+    console.error("Failed to create DB client:", e);
+    client = null;
+  }
 }
 
 export const db = client ? drizzle(client, { schema }) : null as any;

@@ -74,6 +74,7 @@ export async function POST(request: NextRequest) {
     const now = new Date().toISOString()
     let pronosticoId: number | null = null
 
+    // DB Insert re-enabled
     if (hasDb && user) {
       try {
         console.log("Attempting to insert pronostico for user:", user?.id)
