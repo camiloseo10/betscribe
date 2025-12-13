@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import { geminiClient, MODEL_ID, genaiPool } from "@/lib/gemini"
-import { db } from "@/db"
-import { aiConfigurations } from "@/db/schema"
-import { eq } from "drizzle-orm"
 import { extractMetadata, countWords } from "@/lib/prompt-builder"
 import { buildPronosticoPrompt } from "@/lib/prompt_builder_pronostico"
+import { db } from "@/db"
+import { pronosticos } from "@/db/schema"
+import { eq } from "drizzle-orm"
+import { getUserBySessionToken } from "@/lib/auth"
 
 function sanitizeMessage(message?: string): string {
   if (!message) return "Error inesperado"
@@ -30,52 +31,54 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const {
-      configId,
-      tipoEvento,
-      competicion,
-      competidorA,
-      competidorB,
-      cuotaA,
-      cuotaB,
-      cuotaTercerResultado,
+      evento,
+      liga,
+      mercado,
+      cuota,
+      enfoque,
       language,
+      wordCount,
     } = body
 
-    if (!tipoEvento || !competicion || !competidorA || !competidorB || !cuotaA || !cuotaB) {
+    if (!evento || !liga || !mercado || !cuota || !enfoque) {
       return NextResponse.json({ error: "Campos obligatorios faltantes" }, { status: 400 })
     }
 
-    let config: any | null = null
-    if (configId) {
-      const rows = await db.select().from(aiConfigurations).where(eq(aiConfigurations.id, parseInt(String(configId), 10))).limit(1)
-      config = rows[0] || null
-    }
-    const defaultConfig = {
-      businessName: "BetScribe",
-      businessType: "contenidos",
-      location: "global",
-      expertise: "analista de apuestas",
-      targetAudience: JSON.stringify(["apostadores", "lectores interesados"]),
-      mainService: "pronósticos deportivos",
-      brandPersonality: JSON.stringify(["claro", "analítico", "útil"]),
-      uniqueValue: "análisis estadístico y enfoque responsable",
-      tone: JSON.stringify(["conversacional", "natural"]),
-      desiredAction: "registrarse en operador regulado",
-      wordCount: 1500,
-      localKnowledge: null,
-      language: language || "es",
+    const token = request.cookies.get("session_token")?.value
+    const user = token ? await getUserBySessionToken(token) : null
+    const hasDb = db && typeof (db as any).select === 'function'
+
+    const now = new Date().toISOString()
+    let pronosticoId: number | null = null
+
+    if (hasDb) {
+      const inserted = await db.insert(pronosticos).values({
+        userId: user ? String(user.id) : null,
+        evento,
+        liga,
+        mercado,
+        cuota,
+        enfoque,
+        language: language || "es",
+        content: "",
+        seoTitle: "",
+        metaDescription: "",
+        wordCount: 0,
+        status: "generating",
+        createdAt: now,
+        updatedAt: now,
+      }).returning()
+      pronosticoId = inserted[0].id
     }
 
-    const usedConfig = config || defaultConfig
-    const prompt = buildPronosticoPrompt(usedConfig, {
-      tipoEvento,
-      competicion,
-      competidorA,
-      competidorB,
-      cuotaA,
-      cuotaB,
-      cuotaTercerResultado,
+    const prompt = buildPronosticoPrompt({
+      evento,
+      liga,
+      mercado,
+      cuota,
+      enfoque,
       selectedLanguage: language,
+      wordCount: wordCount ? parseInt(String(wordCount)) : 1000,
     })
 
     if (!geminiClient) {
@@ -108,6 +111,10 @@ export async function POST(request: NextRequest) {
         async start(controller) {
           const encoder = new TextEncoder()
           try {
+            if (pronosticoId != null) {
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "pronostico_id", pronosticoId })}\n\n`))
+            }
+
             const textIterable = typeof (result as any).streamText === 'function'
               ? (result as any).streamText()
               : ((result as any).stream || result)
@@ -138,10 +145,29 @@ export async function POST(request: NextRequest) {
 
             const meta = extractMetadata(full)
             const words = countWords(full)
+
+            if (hasDb && pronosticoId != null) {
+              await db.update(pronosticos)
+                .set({
+                  content: full,
+                  seoTitle: meta.seoTitle,
+                  metaDescription: meta.metaDescription,
+                  wordCount: words,
+                  status: "completed",
+                  updatedAt: new Date().toISOString(),
+                })
+                .where(eq(pronosticos.id, pronosticoId))
+            }
+
             controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "complete", seoTitle: meta.seoTitle, metaDescription: meta.metaDescription, wordCount: words })}\n\n`))
             controller.close()
           } catch (error: any) {
             const friendly = formatApiError(error)
+            if (hasDb && pronosticoId != null) {
+              await db.update(pronosticos)
+                .set({ status: "error", errorMessage: friendly, updatedAt: new Date().toISOString() })
+                .where(eq(pronosticos.id, pronosticoId))
+            }
             controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "error", error: friendly })}\n\n`))
             controller.close()
           }

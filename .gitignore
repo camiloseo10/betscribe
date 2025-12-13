@@ -40,3 +40,9 @@ next-env.d.ts
 # environment secrets
 .env
 .env.*
+
+# local databases
+*.db
+*.sqlite
+*.sqlite3
+*-journal

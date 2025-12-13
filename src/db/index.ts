@@ -24,9 +24,15 @@ const authToken = pickEnv(
 
 let client: ReturnType<typeof createClient> | null = null;
 
-if (!url || !authToken) {
+if (!url) {
   console.warn(
-    'DB configuration missing: set BETSCRIBE_DB_URL/BETSCRIBE_DB_TOKEN or TURSO_CONNECTION_URL/TURSO_AUTH_TOKEN in environment.'
+    'DB configuration missing: set BETSCRIBE_DB_URL or TURSO_CONNECTION_URL in environment.'
+  );
+} else if (url.startsWith('file:')) {
+  client = createClient({ url });
+} else if (!authToken) {
+  console.warn(
+    'DB configuration missing: set BETSCRIBE_DB_TOKEN or TURSO_AUTH_TOKEN in environment.'
   );
 } else {
   client = createClient({ url, authToken });

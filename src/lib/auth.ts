@@ -84,7 +84,11 @@ export function generateVerificationCode() {
 function getRawClient() {
   const url = process.env.BETSCRIBE_DB_URL || process.env.DATABASE_URL || process.env.TURSO_CONNECTION_URL
   const authToken = process.env.BETSCRIBE_DB_TOKEN || process.env.DATABASE_TOKEN || process.env.TURSO_AUTH_TOKEN
-  if (!url || !authToken) return null
+  if (!url) return null
+  if (url.startsWith('file:')) {
+    return createClient({ url })
+  }
+  if (!authToken) return null
   return createClient({ url, authToken })
 }
 

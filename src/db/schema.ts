@@ -22,6 +22,25 @@ export const aiConfigurations = sqliteTable('ai_configurations', {
   updatedAt: text('updated_at').notNull(),
 });
 
+export const pronosticos = sqliteTable('pronosticos', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: text('user_id'),
+  evento: text('evento').notNull(),
+  liga: text('liga').notNull(),
+  mercado: text('mercado').notNull(),
+  cuota: text('cuota').notNull(),
+  enfoque: text('enfoque').notNull(),
+  language: text('language').notNull().default('es'),
+  content: text('content').notNull().default(''),
+  seoTitle: text('seo_title').notNull().default(''),
+  metaDescription: text('meta_description').notNull().default(''),
+  wordCount: integer('word_count').notNull().default(0),
+  status: text('status').notNull().default('generating'),
+  errorMessage: text('error_message'),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});
+
 export const articles = sqliteTable('articles', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   userId: text('user_id'),

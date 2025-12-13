@@ -6,11 +6,12 @@ import { createClient } from "@libsql/client"
 export async function ensureAuthTables() {
   const url = process.env.BETSCRIBE_DB_URL || process.env.DATABASE_URL || process.env.TURSO_CONNECTION_URL
   const authToken = process.env.BETSCRIBE_DB_TOKEN || process.env.DATABASE_TOKEN || process.env.TURSO_AUTH_TOKEN
-  if (!url || !authToken) return
+  if (!url) return
+  if (!authToken && !url.startsWith('file:')) return
   
   // We use a separate raw client here to ensure tables exist
   // This is safe in edge if using the http client (which @libsql/client does by default with url)
-  const raw = createClient({ url, authToken })
+  const raw = createClient(url.startsWith('file:') ? { url } : { url, authToken })
   try {
     await raw.execute(`
       CREATE TABLE IF NOT EXISTS users (
