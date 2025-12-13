@@ -11,7 +11,14 @@ export async function ensureAuthTables() {
   
   // We use a separate raw client here to ensure tables exist
   // This is safe in edge if using the http client (which @libsql/client does by default with url)
-  const raw = createClient(url.startsWith('file:') ? { url } : { url, authToken })
+  let raw;
+  try {
+    raw = createClient(url.startsWith('file:') ? { url } : { url, authToken })
+  } catch (e) {
+    console.error("Failed to create raw client:", e)
+    return
+  }
+
   try {
     await raw.execute(`
       CREATE TABLE IF NOT EXISTS users (
@@ -61,13 +68,18 @@ export async function getUserBySessionToken(token: string) {
   if (!db) return null
   // In a high-traffic app, you might want to remove this check from the hot path
   // or cache the result of table existence.
-  await ensureAuthTables()
-  
-  const rows = await db.select().from(sessions).where(eq(sessions.token, token)).limit(1)
-  const sess = rows[0]
-  if (!sess) return null
-  const exp = new Date(sess.expiresAt)
-  if (exp.getTime() < Date.now()) return null
-  const u = await db.select().from(users).where(eq(users.id, sess.userId!)).limit(1)
-  return u[0] || null
+  try {
+    await ensureAuthTables()
+    
+    const rows = await db.select().from(sessions).where(eq(sessions.token, token)).limit(1)
+    const sess = rows[0]
+    if (!sess) return null
+    const exp = new Date(sess.expiresAt)
+    if (exp.getTime() < Date.now()) return null
+    const u = await db.select().from(users).where(eq(users.id, sess.userId!)).limit(1)
+    return u[0] || null
+  } catch (e) {
+    console.error("Error in getUserBySessionToken:", e)
+    return null
+  }
 }

@@ -56,6 +56,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Error verificando sesión. Intenta más tarde." }, { status: 503 })
     }
 
+    // If user is not found but token exists (e.g. DB error), return 503 instead of 401
+    // to allow client to retry or show appropriate message.
+    if (!user && token) {
+       return NextResponse.json({ error: "Error de conexión con la base de datos. Intenta más tarde." }, { status: 503 })
+    }
+
     if (!user) {
       return NextResponse.json({ error: "Debes iniciar sesión para usar esta funcionalidad" }, { status: 401 })
     }
@@ -68,7 +74,7 @@ export async function POST(request: NextRequest) {
     const now = new Date().toISOString()
     let pronosticoId: number | null = null
 
-    if (hasDb) {
+    if (hasDb && user) {
       try {
         console.log("Attempting to insert pronostico for user:", user?.id)
         // Ensure userId is string
