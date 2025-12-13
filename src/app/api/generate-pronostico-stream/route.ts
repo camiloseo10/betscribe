@@ -102,7 +102,11 @@ export async function POST(request: NextRequest) {
       } catch (e: any) {
         console.error("Error creating pronostico record:", e)
         // Return the specific DB error to the client to help debugging
-        return NextResponse.json({ error: `Error guardando en DB: ${e.message || e}` }, { status: 500 })
+        // We use JSON.stringify to ensure we see the full error object if it's structured
+        return NextResponse.json({ 
+          error: `Error guardando en DB: ${e.message || JSON.stringify(e)}`,
+          details: String(e)
+        }, { status: 500 })
       }
     }
 
