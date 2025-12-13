@@ -101,11 +101,10 @@ export async function POST(request: NextRequest) {
         console.log("Pronostico inserted with ID:", pronosticoId)
       } catch (e: any) {
         console.error("Error creating pronostico record:", e)
-        // Return the specific DB error to the client to help debugging
-        // We use JSON.stringify to ensure we see the full error object if it's structured
+        // Return detailed error including the cause if available
+        const errorMessage = e.cause ? JSON.stringify(e.cause) : (e.message || String(e));
         return NextResponse.json({ 
-          error: `Error guardando en DB: ${e.message || JSON.stringify(e)}`,
-          details: String(e)
+          error: `Error guardando en DB. Verifica que las columnas existan en Turso. Detalles: ${errorMessage}`,
         }, { status: 500 })
       }
     }
@@ -206,6 +205,7 @@ export async function POST(request: NextRequest) {
             controller.close()
           } catch (error: any) {
             const friendly = formatApiError(error)
+            
             if (hasDb && pronosticoId != null) {
               try {
                 await db.update(pronosticos)
@@ -215,6 +215,7 @@ export async function POST(request: NextRequest) {
                 console.error("Error logging error to DB:", e)
               }
             }
+            
             controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "error", error: friendly })}\n\n`))
             controller.close()
           }
