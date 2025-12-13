@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
     const now = new Date().toISOString()
     let pronosticoId: number | null = null
 
-    // DB Insert re-enabled
+    // DB Insert
     if (hasDb && user) {
       try {
         console.log("Attempting to insert pronostico for user:", user?.id)
@@ -99,10 +99,10 @@ export async function POST(request: NextRequest) {
         }).returning()
         pronosticoId = inserted[0].id
         console.log("Pronostico inserted with ID:", pronosticoId)
-      } catch (e) {
+      } catch (e: any) {
         console.error("Error creating pronostico record:", e)
-        // If the table doesn't exist or DB fails, we MUST continue without saving
-        // to avoid blocking the user experience.
+        // Return the specific DB error to the client to help debugging
+        return NextResponse.json({ error: `Error guardando en DB: ${e.message || e}` }, { status: 500 })
       }
     }
 
