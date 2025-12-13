@@ -52,12 +52,16 @@ export async function POST(request: NextRequest) {
     }
 
     const hasDb = db && typeof (db as any).select === 'function'
+    if (!hasDb) {
+      console.error("Database not configured or initialized correctly")
+    }
 
     const now = new Date().toISOString()
     let pronosticoId: number | null = null
 
     if (hasDb) {
       try {
+        console.log("Attempting to insert pronostico for user:", user?.id)
         const inserted = await db.insert(pronosticos).values({
           userId: user ? String(user.id) : null,
           evento,
@@ -75,6 +79,7 @@ export async function POST(request: NextRequest) {
           updatedAt: now,
         }).returning()
         pronosticoId = inserted[0].id
+        console.log("Pronostico inserted with ID:", pronosticoId)
       } catch (e) {
         console.error("Error creating pronostico record:", e)
         // Continue generation even if DB save fails
